@@ -1,0 +1,2 @@
+rootProject.name = "Scrabbler"
+include ':app'
