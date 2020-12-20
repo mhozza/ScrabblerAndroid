@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -194,7 +195,8 @@ fun DictionarySelector(scrabblerViewModel: ScrabblerViewModel, scaffoldState: Sc
         try {
             scrabblerViewModel.onLoadNewDictionary(it, dictionaryPath.toString())
         } catch (e: Exception) {
-            scope.launch { scaffoldState.snackbarHostState.showSnackbar(e.localizedMessage) }
+            Log.e("DictionarySelector", "Failed to load dictionary.", e)
+            scope.launch { scaffoldState.snackbarHostState.showSnackbar("Failed to load dictionary.") }
         }
     }
 
