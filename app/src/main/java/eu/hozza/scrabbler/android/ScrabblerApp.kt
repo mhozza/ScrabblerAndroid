@@ -2,6 +2,7 @@ package eu.hozza.scrabbler.android
 
 import android.content.ContentResolver
 import android.content.Intent
+import android.content.res.Resources
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
@@ -28,7 +29,9 @@ import java.nio.file.Paths
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
-    Scaffold(scaffoldState = scaffoldState) {
+    Scaffold(scaffoldState = scaffoldState, topBar = {
+        TopAppBar(title = {Text("Scrabbler") })
+    }) {
         ScrollableColumn(modifier = Modifier.padding(8.dp)) {
             DictionarySelector(scrabblerViewModel, scaffoldState)
             if (scrabblerViewModel.selectedDictionary.observeAsState().value != null) {
