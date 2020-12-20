@@ -29,7 +29,7 @@ import java.nio.file.Paths
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
     Scaffold(scaffoldState = scaffoldState) {
-        Column(modifier = Modifier.padding(8.dp)) {
+        ScrollableColumn(modifier = Modifier.padding(8.dp)) {
             DictionarySelector(scrabblerViewModel, scaffoldState)
             if (scrabblerViewModel.selectedDictionary.observeAsState().value != null) {
                 Divider()
@@ -83,7 +83,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel) {
 
 @Composable
 fun Results(scrabblerViewModel: ScrabblerViewModel) {
-    ScrollableColumn(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth()) {
         Text("Results", style = MaterialTheme.typography.h3)
         Spacer(modifier = Modifier.preferredHeight(8.dp))
         val words: List<String> by scrabblerViewModel.results.observeAsState(listOf())
