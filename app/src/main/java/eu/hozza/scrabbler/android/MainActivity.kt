@@ -1,11 +1,13 @@
 package eu.hozza.scrabbler.android
 
+import android.app.Application
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -29,61 +31,75 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.*
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
 import eu.hozza.scrabbler.android.ui.ScrabblerTheme
 import kotlinx.coroutines.launch
 import java.nio.file.Paths
 
 class MainActivity : AppCompatActivity() {
+    private val scrabblerViewModel by viewModels<ScrabblerViewModel> {
+        AndroidViewModelFactory(
+            application
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             ScrabblerTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    ScrabblerApp(application as ScrabblerApplication)
+                    ScrabblerApp(scrabblerViewModel)
                 }
             }
         }
     }
 }
 
-class ScrabblerViewModel(private val application: ScrabblerApplication) : ViewModel() {
+class ScrabblerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _results = MutableLiveData(listOf<String>())
     val results: LiveData<List<String>> = _results
 
     val dictionaries: LiveData<List<DictionaryItem>> =
-        application.dictionaryDataService.dictionaries.asLiveData()
+        getApplication<ScrabblerApplication>().dictionaryDataService.dictionaries.asLiveData()
     private val _selectedDictionary: MutableLiveData<String> =
-        MutableLiveData(application.dictionaryDataService.currentDictionaryName)
+        MutableLiveData(getApplication<ScrabblerApplication>().dictionaryDataService.currentDictionaryName)
     val selectedDictionary: LiveData<String> = _selectedDictionary
-
 
     fun onQueryChanged(newQuery: ScrabblerQuery) {
         viewModelScope.launch {
-            _results.value = application.scrabblerDataService.findPermutations(newQuery)
+            _results.value =
+                getApplication<ScrabblerApplication>().scrabblerDataService.findPermutations(
+                    newQuery
+                )
         }
     }
 
     fun onDictionarySelected(dictionaryName: String) {
         viewModelScope.launch {
             _selectedDictionary.value =
-                application.dictionaryDataService.selectDictionary(dictionaryName)
+                getApplication<ScrabblerApplication>().dictionaryDataService.selectDictionary(
+                    dictionaryName
+                )
         }
     }
 
     fun onLoadNewDictionary(name: String, fname: String) {
         viewModelScope.launch {
             _selectedDictionary.value =
-                application.dictionaryDataService.loadDictionary(name, fname)
+                getApplication<ScrabblerApplication>().dictionaryDataService.loadDictionary(
+                    name,
+                    fname
+                )
         }
     }
 }
 
 @Composable
-fun ScrabblerApp(application: ScrabblerApplication) {
+fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
-    val scrabblerViewModel = ScrabblerViewModel(application)
     Scaffold(scaffoldState = scaffoldState) {
         Column(modifier = Modifier.padding(8.dp)) {
             DictionarySelector(scrabblerViewModel, scaffoldState)
@@ -273,7 +289,7 @@ fun InputDialog(
 @Preview(showBackground = true)
 fun DefaultPreview() {
     ScrabblerTheme {
-        ScrabblerApp(ScrabblerApplication())
+        ScrabblerApp(ScrabblerViewModel(ScrabblerApplication()))
     }
 }
 
