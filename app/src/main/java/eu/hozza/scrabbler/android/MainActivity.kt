@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.savedinstancestate.savedInstanceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.ExperimentalFocus
@@ -39,14 +40,12 @@ class MainActivity : AppCompatActivity() {
             ScrabblerTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    ScrabblerView(application as ScrabblerApplication)
+                    ScrabblerApp(application as ScrabblerApplication)
                 }
             }
         }
     }
 }
-
-data class ScrabblerQuery(val word: String)
 
 class ScrabblerViewModel(private val application: ScrabblerApplication) : ViewModel() {
 
@@ -62,7 +61,7 @@ class ScrabblerViewModel(private val application: ScrabblerApplication) : ViewMo
 
     fun onQueryChanged(newQuery: ScrabblerQuery) {
         viewModelScope.launch {
-            _results.value = application.scrabblerDataService.findPermutations(newQuery.word)
+            _results.value = application.scrabblerDataService.findPermutations(newQuery)
         }
     }
 
@@ -82,52 +81,50 @@ class ScrabblerViewModel(private val application: ScrabblerApplication) : ViewMo
 }
 
 @Composable
-fun ScrabblerView(application: ScrabblerApplication) {
+fun ScrabblerApp(application: ScrabblerApplication) {
     val scaffoldState = rememberScaffoldState()
     val scrabblerViewModel = ScrabblerViewModel(application)
     Scaffold(scaffoldState = scaffoldState) {
         Column(modifier = Modifier.padding(8.dp)) {
             DictionarySelector(scrabblerViewModel, scaffoldState)
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .preferredHeight(1.dp)
-                    .background(Color.Gray)
-            )
-            Form(scrabblerViewModel)
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .preferredHeight(1.dp)
-                    .background(Color.Gray)
-            )
-            Results(scrabblerViewModel)
+            if (scrabblerViewModel.selectedDictionary.observeAsState().value != null) {
+                Divider()
+                ScrabblerForm(scrabblerViewModel)
+            }
+            if (!scrabblerViewModel.results.observeAsState().value.isNullOrEmpty()) {
+                Divider()
+                Results(scrabblerViewModel)
+            }
         }
     }
 }
 
 @Composable
-fun Form(scrabblerViewModel: ScrabblerViewModel) {
-    var word by remember { mutableStateOf("") }
-    var prefix by remember { mutableStateOf("") }
-    var wildcard by remember { mutableStateOf(false) }
-    Column() {
-        TextField(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            value = word,
-            onValueChange = { word = it },
-            label = { Text("Word:") })
-        Row(modifier = Modifier.padding(vertical = 4.dp)) {
-            Checkbox(checked = wildcard, onCheckedChange = { wildcard = it })
-            Text("Wildcard", style = MaterialTheme.typography.body1)
-        }
-//        TextField(value = prefix, onValueChange = { prefix = it }, label = { Text("Prefix:") })
-        Button(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            onClick = { scrabblerViewModel.onQueryChanged(ScrabblerQuery(word)) }) {
-            Text("Search")
-        }
-    }
+fun Divider() {
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth()
+            .preferredHeight(1.dp)
+            .background(Color.Gray)
+    )
+}
+
+@Composable
+fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel) {
+    var word by savedInstanceState { "" }
+    var prefix by savedInstanceState { "" }
+    var wildcard by savedInstanceState { false }
+
+    val fields = listOf(
+        TextFormField("Word", word, { word = it }),
+        BooleanFormField("Wildcard", wildcard, { wildcard = it }),
+    )
+
+    Form(
+        fieldModifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        fields = fields,
+        submitLabel = "Search",
+        onSubmit = { scrabblerViewModel.onQueryChanged(ScrabblerQuery(word)) })
 }
 
 @Composable
@@ -276,7 +273,7 @@ fun InputDialog(
 @Preview(showBackground = true)
 fun DefaultPreview() {
     ScrabblerTheme {
-        ScrabblerView(ScrabblerApplication())
+        ScrabblerApp(ScrabblerApplication())
     }
 }
 
