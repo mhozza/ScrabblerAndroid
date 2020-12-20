@@ -7,7 +7,6 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ScrollableColumn
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -16,9 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.savedinstancestate.savedInstanceState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.hozza.scrabbler.android.ui.ScrabblerTheme
@@ -33,14 +32,22 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     Scaffold(scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
+                backgroundColor = MaterialTheme.colors.primary,
                 title = { Text("Scrabbler") },
                 actions = {
                     DictionarySelector(scrabblerViewModel, scaffoldState)
                 })
         }) {
-        ScrollableColumn() {
+        ScrollableColumn {
             if (scrabblerViewModel.selectedDictionary.observeAsState().value != null) {
                 ScrabblerForm(scrabblerViewModel)
+            } else {
+                Text(
+                    text = "Please select dictionary.",
+                    style = MaterialTheme.typography.h1,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
             if (!scrabblerViewModel.results.observeAsState().value.isNullOrEmpty()) {
                 Results(scrabblerViewModel)
@@ -56,26 +63,29 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel) {
     val wildcardField = BooleanFormField("Wildcard (?)", savedInstanceState { true })
     val allowShorterField = BooleanFormField("Allow shorter", savedInstanceState { false })
 
-    Form(
-        modifier = Modifier.background(Color(0xFFffefe0)).padding(CONTENT_PADDING),
-        fieldModifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        fields = listOf(
-            wordField,
-            prefixField,
-            wildcardField,
-            allowShorterField,
-        ),
-        submitLabel = "Search",
-        onSubmit = {
-            scrabblerViewModel.onQueryChanged(
-                ScrabblerQuery(
-                    word = wordField.value,
-                    wildcard = wildcardField.value,
-                    prefix = prefixField.value,
-                    allowShorter = allowShorterField.value,
+    Surface(elevation = 5.dp) {
+        Form(
+            modifier = Modifier.padding(CONTENT_PADDING),
+            fieldModifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            fields = listOf(
+                wordField,
+                prefixField,
+                wildcardField,
+                allowShorterField,
+            ),
+            submitLabel = "Search",
+            onSubmit = {
+                scrabblerViewModel.onQueryChanged(
+                    ScrabblerQuery(
+                        word = wordField.value,
+                        wildcard = wildcardField.value,
+                        prefix = prefixField.value,
+                        allowShorter = allowShorterField.value,
+                    )
                 )
-            )
-        })
+            })
+    }
+
 }
 
 @Composable
