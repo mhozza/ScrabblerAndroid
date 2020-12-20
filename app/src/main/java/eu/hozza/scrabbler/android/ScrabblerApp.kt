@@ -2,7 +2,6 @@ package eu.hozza.scrabbler.android
 
 import android.content.ContentResolver
 import android.content.Intent
-import android.content.res.Resources
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
@@ -16,44 +15,38 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.savedinstancestate.savedInstanceState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AmbientContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.hozza.scrabbler.android.ui.ScrabblerTheme
 import kotlinx.coroutines.launch
 import java.nio.file.Paths
 
+private val CONTENT_PADDING = 8.dp
+
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
-    Scaffold(scaffoldState = scaffoldState, topBar = {
-        TopAppBar(title = {Text("Scrabbler") })
-    }) {
-        ScrollableColumn(modifier = Modifier.padding(8.dp)) {
-            DictionarySelector(scrabblerViewModel, scaffoldState)
+    Scaffold(scaffoldState = scaffoldState,
+        topBar = {
+            TopAppBar(
+                title = { Text("Scrabbler") },
+                actions = {
+                    DictionarySelector(scrabblerViewModel, scaffoldState)
+                })
+        }) {
+        ScrollableColumn() {
             if (scrabblerViewModel.selectedDictionary.observeAsState().value != null) {
-                Divider()
                 ScrabblerForm(scrabblerViewModel)
             }
             if (!scrabblerViewModel.results.observeAsState().value.isNullOrEmpty()) {
-                Divider()
                 Results(scrabblerViewModel)
             }
         }
     }
-}
-
-@Composable
-fun Divider() {
-    Spacer(
-        modifier = Modifier
-            .fillMaxWidth()
-            .preferredHeight(1.dp)
-            .background(Color.Gray)
-    )
 }
 
 @Composable
@@ -64,6 +57,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel) {
     val allowShorterField = BooleanFormField("Allow shorter", savedInstanceState { false })
 
     Form(
+        modifier = Modifier.background(Color(0xFFffefe0)).padding(CONTENT_PADDING),
         fieldModifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         fields = listOf(
             wordField,
@@ -86,7 +80,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel) {
 
 @Composable
 fun Results(scrabblerViewModel: ScrabblerViewModel) {
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().padding(CONTENT_PADDING)) {
         Text("Results", style = MaterialTheme.typography.h3)
         Spacer(modifier = Modifier.preferredHeight(8.dp))
         val words: List<String> by scrabblerViewModel.results.observeAsState(listOf())
@@ -144,34 +138,33 @@ fun DictionarySelector(scrabblerViewModel: ScrabblerViewModel, scaffoldState: Sc
         }
     }
 
-    Row(
-        modifier = Modifier.padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("Dictionary: ")
-        DropdownMenu(
-            dropdownModifier = Modifier.weight(1.0f, fill = true),
-            toggle = {
-                Button(modifier = Modifier.fillMaxWidth(), onClick = { expanded = true }) {
-                    Text(selectedDictionary ?: "Select...")
-                    Icon(Icons.Default.ArrowDropDown)
-                }
-            },
-            expanded = expanded,
-            onDismissRequest = { expanded = false }) {
+    DropdownMenu(
+        toggleModifier = Modifier.padding(CONTENT_PADDING),
+        dropdownModifier = Modifier.fillMaxWidth(),
+        toggle = {
+            Button(onClick = { expanded = true }) {
+                Icon(
+                    modifier = Modifier.padding(end = 4.dp),
+                    imageVector = vectorResource(id = R.drawable.ic_menu_book_black_18dp)
+                )
+                Text(selectedDictionary ?: "Select dictionary")
+                Icon(Icons.Default.ArrowDropDown)
+            }
+        },
+        expanded = expanded,
+        onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(onClick = {
+            expanded = false
+            openFileLauncher.launch(null)
+        }) {
+            Text("Load from file.")
+        }
+        for (dictionary in dictionaries) {
             DropdownMenuItem(onClick = {
                 expanded = false
-                openFileLauncher.launch(null)
+                scrabblerViewModel.onDictionarySelected(dictionary.name)
             }) {
-                Text("Load from file.")
-            }
-            for (dictionary in dictionaries) {
-                DropdownMenuItem(onClick = {
-                    expanded = false
-                    scrabblerViewModel.onDictionarySelected(dictionary.name)
-                }) {
-                    Text(dictionary.name)
-                }
+                Text(dictionary.name)
             }
         }
     }
