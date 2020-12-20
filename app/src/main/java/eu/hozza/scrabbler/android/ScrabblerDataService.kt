@@ -16,7 +16,7 @@ class ScrabblerDataService(private val dictionaryDataService: DictionaryDataServ
 
             Scrabbler(dictionary, trie, true).answer(
                 query.word,
-                limit = 50,
+                limit = 200,
                 regex = false,
                 allowShorter = query.allowShorter,
                 prefix = query.prefix,
