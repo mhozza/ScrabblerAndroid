@@ -29,25 +29,36 @@ private val CONTENT_PADDING = 8.dp
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
+    var selectedDictionary: String? by savedInstanceState { null }
+
     Scaffold(scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
                 backgroundColor = MaterialTheme.colors.primary,
                 title = { Text("Scrabbler") },
                 actions = {
-                    DictionarySelector(scrabblerViewModel, scaffoldState)
+                    DictionarySelector(
+                        scaffoldState,
+                        selectedDictionary,
+                        onDictionarySelected = {
+                            selectedDictionary = it
+                        },
+                        onNewDictionarySelected = { name, path ->
+                            scrabblerViewModel.onLoadNewDictionary(name, path)
+                            selectedDictionary = name
+                        })
                 })
         }) {
         ScrollableColumn {
-            if (scrabblerViewModel.selectedDictionary.observeAsState().value != null) {
-                ScrabblerForm(scrabblerViewModel)
-            } else {
+            if (selectedDictionary == null) {
                 Text(
                     text = "Please select dictionary.",
                     style = MaterialTheme.typography.h1,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+            } else {
+                ScrabblerForm(scrabblerViewModel, selectedDictionary!!)
             }
             if (!scrabblerViewModel.results.observeAsState().value.isNullOrEmpty()) {
                 Results(scrabblerViewModel)
@@ -57,7 +68,7 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
 }
 
 @Composable
-fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel) {
+fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: String) {
     val wordField = TextFormField("Word", savedInstanceState { "" })
     val prefixField = TextFormField("Prefix", savedInstanceState { "" })
     val wildcardField = BooleanFormField("Wildcard (?)", savedInstanceState { true })
@@ -76,6 +87,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel) {
             submitLabel = "Search",
             onSubmit = {
                 scrabblerViewModel.onQueryChanged(
+                    selectedDictionary,
                     ScrabblerQuery(
                         word = wordField.value,
                         wildcard = wildcardField.value,
@@ -106,14 +118,20 @@ fun Results(scrabblerViewModel: ScrabblerViewModel) {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun DictionarySelector(scrabblerViewModel: ScrabblerViewModel, scaffoldState: ScaffoldState) {
+fun DictionarySelector(
+    scaffoldState: ScaffoldState,
+    selectedDictionary: String? = null,
+    onDictionarySelected: (String?) -> Unit = {},
+    onNewDictionarySelected: (String, String) -> Unit = { _, _ -> run {} },
+) {
     var expanded by remember { mutableStateOf(false) }
     var openDialog by remember { mutableStateOf(false) }
     var dictionaryPath: Uri? by remember { mutableStateOf(null) }
     var name by remember { mutableStateOf("") }
 
-    val dictionaries: List<DictionaryItem> by scrabblerViewModel.dictionaries.observeAsState(listOf())
-    val selectedDictionary: String? by scrabblerViewModel.selectedDictionary.observeAsState(null)
+    val dictionaries by (AmbientContext.current.applicationContext as ScrabblerApplication).dictionaryDataService.dictionaries.collectAsState(
+        listOf()
+    )
 
     val contentResolver = AmbientContext.current.contentResolver
     val scope = rememberCoroutineScope()
@@ -141,7 +159,7 @@ fun DictionarySelector(scrabblerViewModel: ScrabblerViewModel, scaffoldState: Sc
     ) {
         openDialog = false
         try {
-            scrabblerViewModel.onLoadNewDictionary(it, dictionaryPath.toString())
+            onNewDictionarySelected(it, dictionaryPath.toString())
         } catch (e: Exception) {
             Log.e("DictionarySelector", "Failed to load dictionary.", e)
             scope.launch { scaffoldState.snackbarHostState.showSnackbar("Failed to load dictionary.") }
@@ -172,7 +190,7 @@ fun DictionarySelector(scrabblerViewModel: ScrabblerViewModel, scaffoldState: Sc
         for (dictionary in dictionaries) {
             DropdownMenuItem(onClick = {
                 expanded = false
-                scrabblerViewModel.onDictionarySelected(dictionary.name)
+                onDictionarySelected(dictionary.name)
             }) {
                 Text(dictionary.name)
             }

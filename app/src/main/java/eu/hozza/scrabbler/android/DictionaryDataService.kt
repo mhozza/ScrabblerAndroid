@@ -3,44 +3,48 @@ package eu.hozza.scrabbler.android
 import android.content.ContentResolver
 import android.database.sqlite.SQLiteConstraintException
 import android.net.Uri
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.util.*
+import java.io.FileNotFoundException
 
 class DictionaryDataService(
     private val dictionaryItemDao: DictionaryItemDao,
     private val contentResolver: ContentResolver,
 ) {
-    var currentDictionaryName: String? = null
-        private set
-    var dictionary: List<String>? = null
-        private set
-    val dictionaries = dictionaryItemDao.getAll()
+    val dictionaries = dictionaryItemDao.getAll().filterExisting()
 
     suspend fun loadDictionary(name: String, fname: String): String {
         val dictionaryItem = DictionaryItem(name, fname)
         try {
             dictionaryItemDao.insertAll(dictionaryItem)
         } catch (e: SQLiteConstraintException) {
-            // TODO
+            throw IllegalArgumentException("Could not create dictionary item entry.", e)
         }
-        return selectDictionary(dictionaryItem.name)
+        return dictionaryItem.name
     }
 
-    suspend fun selectDictionary(name: String): String {
-        val dictionaryItem = dictionaryItemDao.getByName(name)
-        checkNotNull(dictionaryItem)
-        loadDictionaryFromFile(dictionaryItem.path)
-        currentDictionaryName = name
-        return name
+    suspend fun getDictionaryUri(name: String): String? {
+        return dictionaryItemDao.getByName(name)?.path
     }
 
-    private suspend fun loadDictionaryFromFile(fname: String) {
-        withContext(Dispatchers.IO) {
-            BufferedReader(InputStreamReader(contentResolver.openInputStream(Uri.parse(fname)))).use {
-                dictionary = generateSequence { it.readLine()?.trim()?.toLowerCase(Locale.getDefault()) }.toList()
+    private fun Flow<List<DictionaryItem>>.filterExisting(): Flow<List<DictionaryItem>> {
+        return this.map { fileList ->
+            withContext(Dispatchers.IO) {
+                fileList.filter { item ->
+                    try {
+                        val inputStream = contentResolver.openInputStream(Uri.parse(item.path))
+                        inputStream?.close()
+                        inputStream != null
+                    } catch (e: FileNotFoundException) {
+                        false
+                    } catch (e: Exception) {
+                        Log.e("DictionaryDataService", "Failed to check if file exists: $item", e)
+                        false
+                    }
+                }
             }
         }
     }
