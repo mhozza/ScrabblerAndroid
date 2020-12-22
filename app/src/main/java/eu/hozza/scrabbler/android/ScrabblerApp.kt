@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.savedinstancestate.savedInstanceState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.res.vectorResource
@@ -64,9 +65,7 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            if (!scrabblerViewModel.results.observeAsState().value.isNullOrEmpty()) {
-                Results(scrabblerViewModel)
-            }
+            Results(scrabblerViewModel)
         }
     }
 }
@@ -101,21 +100,30 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
                 )
             })
     }
-
 }
 
 @Composable
-fun Results(scrabblerViewModel: ScrabblerViewModel) {
-    Column(Modifier.fillMaxWidth().padding(CONTENT_PADDING)) {
-        Text("Results", style = MaterialTheme.typography.h3)
-        Spacer(modifier = Modifier.preferredHeight(8.dp))
-        val words: List<String> by scrabblerViewModel.results.observeAsState(listOf())
-        for (word in words) {
-            Text(
-                word,
-                modifier = Modifier.padding(vertical = 4.dp),
-                style = MaterialTheme.typography.body1
-            )
+fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifier) {
+    val loadingState by scrabblerViewModel.loadingState.observeAsState()
+    val results by scrabblerViewModel.results.observeAsState()
+    if (loadingState == LoadingState.LOADING) {
+        Box(modifier.fillMaxWidth().padding(CONTENT_PADDING), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else if (results != null) {
+        Column(modifier.fillMaxWidth().padding(CONTENT_PADDING)) {
+            Text("Results", style = MaterialTheme.typography.h3)
+            Spacer(modifier = Modifier.preferredHeight(8.dp))
+            if (results!!.isEmpty()) {
+                Text("No results", style = MaterialTheme.typography.body1)
+            }
+            for (word in results!!) {
+                Text(
+                    word,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    style = MaterialTheme.typography.body1
+                )
+            }
         }
     }
 }
