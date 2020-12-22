@@ -6,6 +6,8 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -26,6 +28,7 @@ import java.nio.file.Paths
 
 private val CONTENT_PADDING = 8.dp
 
+@ExperimentalAnimationApi
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
@@ -50,6 +53,9 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                 })
         }) {
         ScrollableColumn {
+            AnimatedVisibility(visible = selectedDictionary != null) {
+                ScrabblerForm(scrabblerViewModel, selectedDictionary!!)
+            }
             if (selectedDictionary == null) {
                 Text(
                     text = "Please select dictionary.",
@@ -57,8 +63,6 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
-            } else {
-                ScrabblerForm(scrabblerViewModel, selectedDictionary!!)
             }
             if (!scrabblerViewModel.results.observeAsState().value.isNullOrEmpty()) {
                 Results(scrabblerViewModel)
@@ -198,6 +202,7 @@ fun DictionarySelector(
     }
 }
 
+@ExperimentalAnimationApi
 @Composable
 @Preview(showBackground = true)
 fun DefaultPreview() {

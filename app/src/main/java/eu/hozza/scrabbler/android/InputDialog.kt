@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
-import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.ExperimentalFocus
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focusRequester
 import androidx.compose.ui.text.TextRange
@@ -19,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import eu.hozza.scrabbler.android.ui.ScrabblerTheme
 
-@OptIn(ExperimentalFocus::class)
 @Composable
 fun InputDialog(
     initialValue: String = "",
