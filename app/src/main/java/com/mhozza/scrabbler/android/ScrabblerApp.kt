@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 import android.content.ContentResolver
 import android.content.Intent
@@ -23,7 +23,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import eu.hozza.scrabbler.android.ui.ScrabblerTheme
+import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 import kotlinx.coroutines.launch
 import java.nio.file.Paths
 

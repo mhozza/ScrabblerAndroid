@@ -1,10 +1,10 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 import android.content.ContentResolver
 import android.net.Uri
-import eu.hozza.scrabbler.Scrabbler
-import eu.hozza.scrabbler.buildTrie
-import eu.hozza.scrabbler.filterDictionary
+import com.mhozza.scrabbler.Scrabbler
+import com.mhozza.scrabbler.buildTrie
+import com.mhozza.scrabbler.filterDictionary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader

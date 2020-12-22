@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 import android.content.ContentResolver
 import android.database.sqlite.SQLiteConstraintException

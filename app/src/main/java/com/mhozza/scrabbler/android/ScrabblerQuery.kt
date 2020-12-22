@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 data class ScrabblerQuery(
     val word: String,

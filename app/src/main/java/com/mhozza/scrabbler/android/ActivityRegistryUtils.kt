@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.ActivityResultRegistryOwner
@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.*
 import androidx.compose.runtime.savedinstancestate.rememberSavedInstanceState
 import androidx.compose.ui.platform.AmbientContext
-import androidx.core.app.ActivityOptionsCompat
 import java.util.*
 
 @Composable

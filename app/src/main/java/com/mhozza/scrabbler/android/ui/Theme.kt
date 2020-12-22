@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android.ui
+package com.mhozza.scrabbler.android.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.MaterialTheme

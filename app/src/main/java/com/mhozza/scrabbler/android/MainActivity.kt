@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 import android.os.Bundle
 import android.view.WindowManager
@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.setContent
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory
-import eu.hozza.scrabbler.android.ui.ScrabblerTheme
+import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 
 @ExperimentalAnimationApi
 class MainActivity : AppCompatActivity() {

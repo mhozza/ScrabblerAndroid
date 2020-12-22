@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -15,7 +15,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import eu.hozza.scrabbler.android.ui.ScrabblerTheme
+import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 
 @Composable
 fun InputDialog(

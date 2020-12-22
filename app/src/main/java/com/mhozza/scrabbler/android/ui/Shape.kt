@@ -1,4 +1,4 @@
-package eu.hozza.scrabbler.android.ui
+package com.mhozza.scrabbler.android.ui
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Shapes

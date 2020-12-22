@@ -1,8 +1,6 @@
-package eu.hozza.scrabbler.android
+package com.mhozza.scrabbler.android
 
 import android.app.Application
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 
 class ScrabblerApplication : Application() {
     private val database by lazy { AppDatabase.getDatabase(this) }

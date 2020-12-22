@@ -8,7 +8,7 @@ android {
     compileSdkVersion 30
 
     defaultConfig {
-        applicationId "eu.hozza.scrabbler.android"
+        applicationId "com.mhozza.scrabbler.android"
         minSdkVersion 28
         targetSdkVersion 30
         versionCode 1
@@ -68,6 +68,6 @@ dependencies {
     implementation "androidx.room:room-ktx:$room_version"
     testImplementation "androidx.room:room-testing:$room_version"
 
-    implementation "com.github.mhozza.ScrabblerKt:scrabblerlib:1.1.2"
-    implementation "com.github.mhozza.ScrabblerKt:datastructures:1.1.2"
+    implementation "com.github.mhozza.ScrabblerKt:scrabblerlib:1.2.0"
+    implementation "com.github.mhozza.ScrabblerKt:datastructures:1.2.0"
 }
