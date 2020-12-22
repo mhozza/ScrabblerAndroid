@@ -77,6 +77,10 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
     val wildcardField = BooleanFormField("Wildcard (?)", savedInstanceState { true })
     val allowShorterField = BooleanFormField("Allow shorter", savedInstanceState { false })
 
+    if(wordField.value.isEmpty()) {
+        scrabblerViewModel.clearResults()
+    }
+
     Surface(elevation = 5.dp) {
         Form(
             modifier = Modifier.padding(CONTENT_PADDING),
@@ -112,10 +116,14 @@ fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifie
         }
     } else if (results != null) {
         Column(modifier.fillMaxWidth().padding(CONTENT_PADDING)) {
-            Text("Results", style = MaterialTheme.typography.h3)
             Spacer(modifier = Modifier.preferredHeight(8.dp))
             if (results!!.isEmpty()) {
-                Text("No results", style = MaterialTheme.typography.body1)
+                Text(
+                    "No results",
+                    style = MaterialTheme.typography.h6,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colors.error
+                )
             }
             for (word in results!!) {
                 Text(

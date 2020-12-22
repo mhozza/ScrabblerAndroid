@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class ScrabblerViewModel(application: Application) : AndroidViewModel(application) {
@@ -15,15 +16,30 @@ class ScrabblerViewModel(application: Application) : AndroidViewModel(applicatio
     private val _loadingState = MutableLiveData(LoadingState.IDLE)
     val loadingState: LiveData<LoadingState> = _loadingState
 
-    fun onQueryChanged(dictionary: String, newQuery: ScrabblerQuery) {
-        _loadingState.value = LoadingState.LOADING
+    private var resultsJob: Job? = null
+    private var lastQuery: ScrabblerQuery? = null
+
+    fun clearResults() {
         _results.value = null
-        viewModelScope.launch {
-            _results.value =
-                getApplication<ScrabblerApplication>().scrabblerDataService.findPermutations(
-                    dictionary, newQuery
-                )
-            _loadingState.value = LoadingState.IDLE
+        _loadingState.value = LoadingState.IDLE
+    }
+
+    fun onQueryChanged(dictionary: String, newQuery: ScrabblerQuery) {
+        if (newQuery == lastQuery) return
+        lastQuery = newQuery
+        clearResults()
+        _loadingState.value = LoadingState.LOADING
+        synchronized(this) {
+            if (resultsJob != null && resultsJob!!.isActive) {
+                resultsJob!!.cancel()
+            }
+            resultsJob = viewModelScope.launch {
+                _results.value =
+                    getApplication<ScrabblerApplication>().scrabblerDataService.findPermutations(
+                        dictionary, newQuery
+                    )
+                _loadingState.value = LoadingState.IDLE
+            }
         }
     }
 
