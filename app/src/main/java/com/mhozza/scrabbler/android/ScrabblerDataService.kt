@@ -25,7 +25,7 @@ class ScrabblerDataService(
                     dictionaryLoader.getDictionary(dictionaryName),
                     query.word,
                     wildcard,
-                    useAllLetters = !query.allowShorter,
+                    useAllLetters = query.useAllLetters,
                     prefix = query.prefix
                 )
             val trie = buildTrie(dictionary)
@@ -34,7 +34,7 @@ class ScrabblerDataService(
                 query.word,
                 limit = 200,
                 regex = false,
-                allowShorter = query.allowShorter,
+                allowShorter = !query.useAllLetters,
                 prefix = query.prefix,
                 wildcard = wildcard
             )

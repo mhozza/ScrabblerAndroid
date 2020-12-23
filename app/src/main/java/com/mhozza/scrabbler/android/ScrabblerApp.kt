@@ -75,7 +75,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
     val wordField = TextFormField("Word", savedInstanceState { "" })
     val prefixField = TextFormField("Prefix", savedInstanceState { "" })
     val wildcardField = BooleanFormField("Wildcard (?)", savedInstanceState { true })
-    val allowShorterField = BooleanFormField("Allow shorter", savedInstanceState { false })
+    val useAllLetters = BooleanFormField("Use all letters", savedInstanceState { true })
 
     if(wordField.value.isEmpty()) {
         scrabblerViewModel.clearResults()
@@ -89,7 +89,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
                 wordField,
                 prefixField,
                 wildcardField,
-                allowShorterField,
+                useAllLetters,
             ),
             submitLabel = "Search",
             onSubmit = {
@@ -99,7 +99,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
                         word = wordField.value,
                         wildcard = wildcardField.value,
                         prefix = prefixField.value,
-                        allowShorter = allowShorterField.value,
+                        useAllLetters = useAllLetters.value,
                     )
                 )
             })
