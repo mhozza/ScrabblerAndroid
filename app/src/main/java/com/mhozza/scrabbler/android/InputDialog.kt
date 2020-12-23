@@ -1,6 +1,7 @@
 package com.mhozza.scrabbler.android
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Interaction
+import androidx.compose.foundation.InteractionState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,7 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focusRequester
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -33,36 +37,41 @@ fun InputDialog(
                 )
             )
         }
-        Dialog(onDismissRequest = onDismissRequest) {
-            val requester = FocusRequester()
-            onActive(callback = { requester.requestFocus() })
-
-            Column(
-                Modifier
-                    .background(color = MaterialTheme.colors.background)
-            ) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp)
-                        .focusRequester(requester),
-                    value = value,
-                    onValueChange = { value = it },
-                    onTextInputStarted = {
-                        it.showSoftwareKeyboard()
-                    }
-                )
-                Row() {
-                    Button(
-                        modifier = Modifier.weight(1f).padding(4.dp),
-                        onClick = { onConfirm(value.text) }) {
-                        Text("OK")
-                    }
-                    Button(
-                        modifier = Modifier.weight(1f).padding(4.dp),
-                        onClick = onDismissRequest
-                    ) {
-                        Text("Cancel")
+        Dialog(onDismissRequest = {
+            onDismissRequest()
+        }) {
+            Surface(elevation = 8.dp, shape = MaterialTheme.shapes.medium) {
+                val requester = FocusRequester()
+                onCommit { requester.requestFocus() }
+                Column {
+                    OutlinedTextField(
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
+                            .focusRequester(requester),
+                        value = value,
+                        onValueChange = { value = it },
+                        onTextInputStarted = {
+                            it.showSoftwareKeyboard()
+                        }
+                    )
+                    Row {
+                        Button(
+                            modifier = Modifier.weight(1f).padding(4.dp),
+                            onClick = {
+                                onConfirm(value.text)
+                            }) {
+                            Text("OK")
+                        }
+                        Button(
+                            modifier = Modifier.weight(1f).padding(4.dp),
+                            onClick = {
+                                onDismissRequest()
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
                     }
                 }
             }
