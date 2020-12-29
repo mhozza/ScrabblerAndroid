@@ -74,7 +74,9 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
 fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: String) {
     val wordField = TextFormField("Word", savedInstanceState { "" })
     val prefixField = TextFormField("Prefix", savedInstanceState { "" })
-    val wildcardField = BooleanFormField("Wildcard (?)", savedInstanceState { true })
+    val containsField = TextFormField("Contains", savedInstanceState { "" })
+    val suffixField = TextFormField("Suffix", savedInstanceState { "" })
+    val regexFilterField = TextFormField("Filter (regex)", savedInstanceState { "" })
     val useAllLetters = BooleanFormField("Use all letters", savedInstanceState { true })
 
     if(wordField.value.isEmpty()) {
@@ -88,7 +90,9 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
             fields = listOf(
                 wordField,
                 prefixField,
-                wildcardField,
+                containsField,
+                suffixField,
+                regexFilterField,
                 useAllLetters,
             ),
             submitLabel = "Search",
@@ -97,8 +101,10 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
                     selectedDictionary,
                     ScrabblerQuery(
                         word = wordField.value,
-                        wildcard = wildcardField.value,
                         prefix = prefixField.value,
+                        suffix = suffixField.value,
+                        contains = containsField.value,
+                        regexFilter = regexFilterField.value.emptyToNull(),
                         useAllLetters = useAllLetters.value,
                     )
                 )
@@ -245,3 +251,5 @@ fun generateName(path: String, attempt: Int? = null): String {
         "$name ($attempt)"
     }
 }
+
+fun String?.emptyToNull(): String? = if (isNullOrEmpty()) null else this

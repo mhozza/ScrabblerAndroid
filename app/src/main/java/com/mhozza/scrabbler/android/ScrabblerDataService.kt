@@ -2,84 +2,61 @@ package com.mhozza.scrabbler.android
 
 import android.content.ContentResolver
 import android.net.Uri
+import com.mhozza.scrabbler.Dictionary
 import com.mhozza.scrabbler.Scrabbler
-import com.mhozza.scrabbler.buildTrie
-import com.mhozza.scrabbler.filterDictionary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.util.*
+
+private const val WORD_COUNT_LIMIT = 200
 
 class ScrabblerDataService(
     dictionaryDataService: DictionaryDataService,
     contentResolver: ContentResolver
 ) {
-    private val dictionaryLoader = DictionaryLoader(dictionaryDataService, contentResolver)
+    private val scrabblerFactory = ScrabblerFactory(dictionaryDataService, contentResolver)
 
     suspend fun findPermutations(dictionaryName: String, query: ScrabblerQuery): List<String> =
         withContext(Dispatchers.Default) {
-            val wildcard = if (query.wildcard) '?' else null
-            val dictionary =
-                filterDictionary(
-                    dictionaryLoader.getDictionary(dictionaryName),
-                    query.word,
-                    wildcard,
-                    useAllLetters = query.useAllLetters,
-                    prefix = query.prefix
-                )
-            val trie = buildTrie(dictionary)
-
-            Scrabbler(dictionary, trie, true).answer(
+            scrabblerFactory.get(dictionaryName).findPermutations(
                 query.word,
-                limit = 200,
-                regex = false,
-                allowShorter = !query.useAllLetters,
                 prefix = query.prefix,
-                wildcard = wildcard
+                suffix = query.suffix,
+                contains = query.contains,
+                regexFilter = query.regexFilter,
+                useAllLetters = query.useAllLetters,
+                limit = WORD_COUNT_LIMIT,
             )
         }
 
-    private class DictionaryLoader(
+    private class ScrabblerFactory(
         private val dictionaryDataService: DictionaryDataService,
         private val contentResolver: ContentResolver,
     ) {
-        private data class Dictionary(val name: String, val dictionary: List<String>)
+        data class CachedScrabbler(val key: String, val scrabbler: Scrabbler)
 
-        var currentDictionary: Dictionary? = null
+        var cachedScrabbler: CachedScrabbler? = null
 
-        suspend fun getDictionary(name: String): List<String> {
-            if (currentDictionary?.name != name) {
-                currentDictionary = loadDictionary(name)
+        suspend fun get(name: String): Scrabbler {
+            if (cachedScrabbler?.key != name) {
+                cachedScrabbler = CachedScrabbler(name, Scrabbler(loadDictionary(name)))
             }
-            return currentDictionary?.dictionary
+            return cachedScrabbler?.scrabbler
                 ?: throw IllegalStateException("Could not load dictionary")
         }
 
-        private suspend fun loadDictionary(name: String?): Dictionary? {
-            val dictionary = if (name == null) {
-                null
-            } else {
-                val uri = dictionaryDataService.getDictionaryUri(name)
-                if (uri == null) {
-                    null
-                } else {
-                    loadDictionaryFromFile(uri)
-                }
-            }
-            return if (name != null && dictionary != null) {
-                Dictionary(name, dictionary)
-            } else {
-                null
-            }
+        private suspend fun loadDictionary(name: String): Dictionary {
+            val uri = dictionaryDataService.getDictionaryUri(name)
+                ?: throw java.lang.IllegalStateException("Dictionary not found.")
+            return loadDictionaryFromFile(uri)
         }
 
-        private suspend fun loadDictionaryFromFile(fname: String): List<String> =
+        private suspend fun loadDictionaryFromFile(fname: String): Dictionary =
             withContext(Dispatchers.IO) {
-                BufferedReader(InputStreamReader(contentResolver.openInputStream(Uri.parse(fname)))).use {
-                    generateSequence {
-                        it.readLine()?.trim()?.toLowerCase(Locale.getDefault())
-                    }.toList()
+                val inputStream = contentResolver.openInputStream(Uri.parse(fname))
+                if (inputStream != null) {
+                    Dictionary.load(inputStream)
+                } else {
+                    throw RuntimeException("Could not open InputStream")
                 }
             }
 
