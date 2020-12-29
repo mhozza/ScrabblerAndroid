@@ -7,4 +7,5 @@ data class ScrabblerQuery(
     val contains: String? = null,
     val regexFilter: String? = null,
     val useAllLetters: Boolean = true,
+    val removeAccents: Boolean = true,
 )

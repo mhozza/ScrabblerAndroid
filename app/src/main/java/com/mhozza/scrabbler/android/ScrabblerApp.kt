@@ -77,7 +77,8 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
     val containsField = TextFormField("Contains", savedInstanceState { "" })
     val suffixField = TextFormField("Suffix", savedInstanceState { "" })
     val regexFilterField = TextFormField("Filter (regex)", savedInstanceState { "" })
-    val useAllLetters = BooleanFormField("Use all letters", savedInstanceState { true })
+    val useAllLettersField = BooleanFormField("Use all letters", savedInstanceState { true })
+    val removeAccentsField = BooleanFormField("Remove accents", savedInstanceState { true })
 
     if(wordField.value.isEmpty()) {
         scrabblerViewModel.clearResults()
@@ -93,7 +94,8 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
                 containsField,
                 suffixField,
                 regexFilterField,
-                useAllLetters,
+                useAllLettersField,
+                removeAccentsField,
             ),
             submitLabel = "Search",
             onSubmit = {
@@ -105,7 +107,8 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
                         suffix = suffixField.value,
                         contains = containsField.value,
                         regexFilter = regexFilterField.value.emptyToNull(),
-                        useAllLetters = useAllLetters.value,
+                        useAllLetters = useAllLettersField.value,
+                        removeAccents = removeAccentsField.value,
                     )
                 )
             })

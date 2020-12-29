@@ -17,7 +17,7 @@ class ScrabblerDataService(
 
     suspend fun findPermutations(dictionaryName: String, query: ScrabblerQuery): List<String> =
         withContext(Dispatchers.Default) {
-            scrabblerFactory.get(dictionaryName).findPermutations(
+            scrabblerFactory.get(dictionaryName, query.removeAccents).findPermutations(
                 query.word,
                 prefix = query.prefix,
                 suffix = query.suffix,
@@ -32,13 +32,17 @@ class ScrabblerDataService(
         private val dictionaryDataService: DictionaryDataService,
         private val contentResolver: ContentResolver,
     ) {
-        data class CachedScrabbler(val key: String, val scrabbler: Scrabbler)
+        data class ScrabblerCacheKey(val name: String, val removeAccents: Boolean)
+        data class CachedScrabbler(val key: ScrabblerCacheKey, val scrabbler: Scrabbler)
 
         var cachedScrabbler: CachedScrabbler? = null
 
-        suspend fun get(name: String): Scrabbler {
-            if (cachedScrabbler?.key != name) {
-                cachedScrabbler = CachedScrabbler(name, Scrabbler(loadDictionary(name)))
+        suspend fun get(name: String, removeAccents: Boolean = false): Scrabbler {
+            val key = ScrabblerCacheKey(name, removeAccents)
+            if (cachedScrabbler?.key != key) {
+                val dictionary =
+                    if (removeAccents) loadDictionary(name).removeAccents() else loadDictionary(name)
+                cachedScrabbler = CachedScrabbler(key, Scrabbler(dictionary))
             }
             return cachedScrabbler?.scrabbler
                 ?: throw IllegalStateException("Could not load dictionary")
