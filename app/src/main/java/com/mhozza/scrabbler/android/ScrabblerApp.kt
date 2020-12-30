@@ -80,7 +80,7 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
     val useAllLettersField = BooleanFormField("Use all letters", savedInstanceState { true })
     val removeAccentsField = BooleanFormField("Remove accents", savedInstanceState { true })
 
-    if(wordField.value.isEmpty()) {
+    if (wordField.value.isEmpty()) {
         scrabblerViewModel.clearResults()
     }
 
@@ -212,7 +212,14 @@ fun DictionarySelector(
         onDismissRequest = { expanded = false }) {
         DropdownMenuItem(onClick = {
             expanded = false
-            openFileLauncher.launch(null)
+            openFileLauncher.launch(
+                arrayOf(
+                    "text/plain",
+                    "application/gzip",
+                    "text/csv",
+                    "text/comma-separated-values"
+                )
+            )
         }) {
             Text("Load from file.")
         }
