@@ -6,6 +6,8 @@ import com.mhozza.scrabbler.Dictionary
 import com.mhozza.scrabbler.Scrabbler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.zip.GZIPInputStream
+import java.util.zip.ZipException
 
 private const val WORD_COUNT_LIMIT = 200
 
@@ -56,13 +58,23 @@ class ScrabblerDataService(
 
         private suspend fun loadDictionaryFromFile(fname: String): Dictionary =
             withContext(Dispatchers.IO) {
-                val inputStream = contentResolver.openInputStream(Uri.parse(fname))
+                val uri = Uri.parse(fname)
+                val inputStream = contentResolver.openInputStream(uri)
                 if (inputStream != null) {
-                    Dictionary.load(inputStream)
+                    Dictionary.load(inputStream, compressed = uri.isContentCompressed())
                 } else {
                     throw RuntimeException("Could not open InputStream")
                 }
             }
 
+        private fun Uri.isContentCompressed(): Boolean {
+            val inputStream = contentResolver.openInputStream(this)
+            return try {
+                GZIPInputStream(inputStream)
+                true
+            } catch (e: ZipException) {
+                false
+            }
+        }
     }
 }
