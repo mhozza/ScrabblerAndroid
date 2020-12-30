@@ -277,9 +277,11 @@ fun extractFilename(contentResolver: ContentResolver, uri: Uri): String? {
 }
 
 fun generateName(path: String, attempt: Int? = null): String {
-    val name = Paths.get(path).fileName
+    val name = Paths.get(path).fileName.toString().let {
+        it.substring(0, it.indexOf('.'))
+    }
     return if (attempt == null) {
-        name.toString()
+        name
     } else {
         "$name ($attempt)"
     }
