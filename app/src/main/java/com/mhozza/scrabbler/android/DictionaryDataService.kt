@@ -7,6 +7,7 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.FileNotFoundException
 
@@ -26,6 +27,10 @@ class DictionaryDataService(
         return dictionaryItem.name
     }
 
+    suspend fun deleteDictionary(name: String) {
+        dictionaryItemDao.delete(name)
+    }
+
     suspend fun getDictionaryUri(name: String): String? {
         return dictionaryItemDao.getByName(name)?.path
     }
@@ -39,6 +44,13 @@ class DictionaryDataService(
                         inputStream?.close()
                         inputStream != null
                     } catch (e: FileNotFoundException) {
+                        launch {
+                            try {
+                                dictionaryItemDao.delete(item)
+                            } catch (e: Exception) {
+                                Log.w("DictionaryDataService", e)
+                            }
+                        }
                         false
                     } catch (e: Exception) {
                         Log.e("DictionaryDataService", "Failed to check if file exists: $item", e)

@@ -27,6 +27,9 @@ interface DictionaryItemDao {
     @Delete
     suspend fun delete(dictionaryItem: DictionaryItem)
 
+    @Query("DELETE FROM dictionary_item WHERE name = :name")
+    suspend fun delete(name: String)
+
     @Query("DELETE FROM dictionary_item")
     suspend fun deleteAll()
 }

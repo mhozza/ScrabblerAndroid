@@ -9,10 +9,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ScrollableColumn
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.savedinstancestate.savedInstanceState
@@ -34,6 +36,7 @@ private val CONTENT_PADDING = 8.dp
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
     var selectedDictionary: String? by savedInstanceState { null }
+    val application = AmbientContext.current.applicationContext as ScrabblerApplication
 
     Scaffold(scaffoldState = scaffoldState,
         topBar = {
@@ -50,12 +53,23 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                         onNewDictionarySelected = { name, path ->
                             scrabblerViewModel.onLoadNewDictionary(name, path)
                             selectedDictionary = name
-                        })
+                        },
+                        onDictionaryDeleted = {
+                            if (it == selectedDictionary) {
+                                selectedDictionary = null
+                            }
+                            with(application) {
+                                applicationScope.launch {
+                                    dictionaryDataService.deleteDictionary(it)
+                                }
+                            }
+                        }
+                    )
                 })
         }) {
         ScrollableColumn {
             AnimatedVisibility(visible = selectedDictionary != null) {
-                ScrabblerForm(scrabblerViewModel, selectedDictionary!!)
+                ScrabblerForm(scrabblerViewModel, selectedDictionary)
             }
             if (selectedDictionary == null) {
                 Text(
@@ -71,7 +85,7 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
 }
 
 @Composable
-fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: String) {
+fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: String?) {
     val wordField = TextFormField("Word", savedInstanceState { "" })
     val prefixField = TextFormField("Prefix", savedInstanceState { "" })
     val containsField = TextFormField("Contains", savedInstanceState { "" })
@@ -99,18 +113,20 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
             ),
             submitLabel = "Search",
             onSubmit = {
-                scrabblerViewModel.onQueryChanged(
-                    selectedDictionary,
-                    ScrabblerQuery(
-                        word = wordField.value,
-                        prefix = prefixField.value,
-                        suffix = suffixField.value,
-                        contains = containsField.value,
-                        regexFilter = regexFilterField.value.emptyToNull(),
-                        useAllLetters = useAllLettersField.value,
-                        removeAccents = removeAccentsField.value,
+                if (selectedDictionary != null) {
+                    scrabblerViewModel.onQueryChanged(
+                        selectedDictionary,
+                        ScrabblerQuery(
+                            word = wordField.value,
+                            prefix = prefixField.value,
+                            suffix = suffixField.value,
+                            contains = containsField.value,
+                            regexFilter = regexFilterField.value.emptyToNull(),
+                            useAllLetters = useAllLettersField.value,
+                            removeAccents = removeAccentsField.value,
+                        )
                     )
-                )
+                }
             })
     }
 }
@@ -152,6 +168,7 @@ fun DictionarySelector(
     selectedDictionary: String? = null,
     onDictionarySelected: (String?) -> Unit = {},
     onNewDictionarySelected: (String, String) -> Unit = { _, _ -> run {} },
+    onDictionaryDeleted: (String) -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
     var openDialog by remember { mutableStateOf(false) }
@@ -228,7 +245,13 @@ fun DictionarySelector(
                 expanded = false
                 onDictionarySelected(dictionary.name)
             }) {
-                Text(dictionary.name)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(dictionary.name, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.Delete, Modifier.clickable(onClick = {
+                        expanded = false
+                        onDictionaryDeleted(dictionary.name)
+                    }).padding(4.dp))
+                }
             }
         }
     }
