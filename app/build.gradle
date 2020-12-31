@@ -68,6 +68,6 @@ dependencies {
     implementation "androidx.room:room-ktx:$room_version"
     testImplementation "androidx.room:room-testing:$room_version"
 
-    implementation "com.github.mhozza.ScrabblerKt:scrabblerlib:2.1.2"
-    implementation "com.github.mhozza.ScrabblerKt:datastructures:2.1.2"
+    implementation "com.github.mhozza.ScrabblerKt:scrabblerlib:2.2.0"
+    implementation "com.github.mhozza.ScrabblerKt:datastructures:2.2.0"
 }

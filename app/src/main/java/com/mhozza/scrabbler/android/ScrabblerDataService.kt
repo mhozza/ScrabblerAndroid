@@ -39,29 +39,29 @@ class ScrabblerDataService(
 
         var cachedScrabbler: CachedScrabbler? = null
 
-        suspend fun get(name: String, removeAccents: Boolean = false): Scrabbler {
-            val key = ScrabblerCacheKey(name, removeAccents)
-            if (cachedScrabbler?.key != key) {
-                val dictionary =
-                    if (removeAccents) loadDictionary(name).removeAccents() else loadDictionary(name)
-                cachedScrabbler = CachedScrabbler(key, Scrabbler(dictionary))
+        suspend fun get(name: String, removeAccents: Boolean = false): Scrabbler =
+            withContext(Dispatchers.IO) {
+                val key = ScrabblerCacheKey(name, removeAccents)
+                if (cachedScrabbler?.key != key) {
+                    val dictionary = loadDictionary(name, removeAccents)
+                    cachedScrabbler = CachedScrabbler(key, Scrabbler(dictionary))
+                }
+                cachedScrabbler?.scrabbler
+                    ?: throw IllegalStateException("Could not load dictionary")
             }
-            return cachedScrabbler?.scrabbler
-                ?: throw IllegalStateException("Could not load dictionary")
-        }
 
-        private suspend fun loadDictionary(name: String): Dictionary {
+        private suspend fun loadDictionary(name: String, removeAccents: Boolean): Dictionary {
             val uri = dictionaryDataService.getDictionaryUri(name)
                 ?: throw java.lang.IllegalStateException("Dictionary not found.")
-            return loadDictionaryFromFile(uri)
+            return loadDictionaryFromFile(uri, removeAccents)
         }
 
-        private suspend fun loadDictionaryFromFile(fname: String): Dictionary =
+        private suspend fun loadDictionaryFromFile(fname: String, removeAccents: Boolean): Dictionary =
             withContext(Dispatchers.IO) {
                 val uri = Uri.parse(fname)
                 val inputStream = contentResolver.openInputStream(uri)
                 if (inputStream != null) {
-                    Dictionary.load(inputStream, compressed = uri.isContentCompressed())
+                    Dictionary.load(inputStream, compressed = uri.isContentCompressed(), removeAccents = removeAccents)
                 } else {
                     throw RuntimeException("Could not open InputStream")
                 }
