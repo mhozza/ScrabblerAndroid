@@ -43,6 +43,8 @@ class ScrabblerDataService(
             withContext(Dispatchers.IO) {
                 val key = ScrabblerCacheKey(name, removeAccents)
                 if (cachedScrabbler?.key != key) {
+                    // Allow the previous scrabbler to be cleared.
+                    cachedScrabbler = null
                     val dictionary = loadDictionary(name, removeAccents)
                     cachedScrabbler = CachedScrabbler(key, Scrabbler(dictionary))
                 }
