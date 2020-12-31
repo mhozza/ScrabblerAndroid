@@ -18,6 +18,7 @@ class ScrabblerViewModel(application: Application) : AndroidViewModel(applicatio
 
     private var resultsJob: Job? = null
     private var lastQuery: ScrabblerQuery? = null
+    private var lastDictionary: String? = null
 
     fun clearResults() {
         _results.value = null
@@ -25,8 +26,9 @@ class ScrabblerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun onQueryChanged(dictionary: String, newQuery: ScrabblerQuery) {
-        if (newQuery == lastQuery) return
+        if (newQuery == lastQuery && dictionary == lastDictionary) return
         lastQuery = newQuery
+        lastDictionary = dictionary
         clearResults()
         _loadingState.value = LoadingState.LOADING
         synchronized(this) {
