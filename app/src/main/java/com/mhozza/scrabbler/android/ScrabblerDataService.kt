@@ -56,16 +56,19 @@ class ScrabblerDataService(
             return loadDictionaryFromFile(uri, removeAccents)
         }
 
-        private suspend fun loadDictionaryFromFile(fname: String, removeAccents: Boolean): Dictionary =
-            withContext(Dispatchers.IO) {
-                val uri = Uri.parse(fname)
-                val inputStream = contentResolver.openInputStream(uri)
-                if (inputStream != null) {
-                    Dictionary.load(inputStream, compressed = uri.isContentCompressed(), removeAccents = removeAccents)
-                } else {
-                    throw RuntimeException("Could not open InputStream")
-                }
+        private fun loadDictionaryFromFile(fname: String, removeAccents: Boolean): Dictionary {
+            val uri = Uri.parse(fname)
+            val inputStream = contentResolver.openInputStream(uri)
+            if (inputStream != null) {
+                return Dictionary.load(
+                    inputStream,
+                    compressed = uri.isContentCompressed(),
+                    removeAccents = removeAccents
+                )
+            } else {
+                throw RuntimeException("Could not open InputStream")
             }
+        }
 
         private fun Uri.isContentCompressed(): Boolean {
             val inputStream = contentResolver.openInputStream(this)
