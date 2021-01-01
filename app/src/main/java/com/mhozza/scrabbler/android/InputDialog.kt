@@ -1,7 +1,5 @@
 package com.mhozza.scrabbler.android
 
-import androidx.compose.foundation.Interaction
-import androidx.compose.foundation.InteractionState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,10 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focusRequester
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -25,7 +20,7 @@ import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 fun InputDialog(
     initialValue: String = "",
     openDialog: Boolean,
-    validator: (String) -> Boolean = {true},
+    validator: (String) -> Boolean = { true },
     onDismissRequest: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
