@@ -25,8 +25,9 @@ import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 fun InputDialog(
     initialValue: String = "",
     openDialog: Boolean,
+    validator: (String) -> Boolean = {true},
     onDismissRequest: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String) -> Unit,
 ) {
     if (openDialog) {
         var value by remember {
@@ -54,11 +55,13 @@ fun InputDialog(
                         onValueChange = { value = it },
                         onTextInputStarted = {
                             it.showSoftwareKeyboard()
-                        }
+                        },
+                        isErrorValue = !validator(value.text)
                     )
                     Row {
                         Button(
                             modifier = Modifier.weight(1f).padding(4.dp),
+                            enabled = validator(value.text),
                             onClick = {
                                 onConfirm(value.text)
                             }) {

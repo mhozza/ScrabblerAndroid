@@ -23,12 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.SoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mhozza.scrabbler.android.ui.ScrabblerTheme
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.nio.file.Paths
 
@@ -95,7 +95,8 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
     val prefixField = TextFormField("Prefix", savedInstanceState { "" }, keyboardOptions)
     val containsField = TextFormField("Contains", savedInstanceState { "" }, keyboardOptions)
     val suffixField = TextFormField("Suffix", savedInstanceState { "" }, keyboardOptions)
-    val regexFilterField = TextFormField("Filter (regex)", savedInstanceState { "" }, keyboardOptions)
+    val regexFilterField =
+        TextFormField("Filter (regex)", savedInstanceState { "" }, keyboardOptions)
     val useAllLettersField = BooleanFormField("Use all letters", savedInstanceState { true })
     val removeAccentsField = BooleanFormField("Remove accents", savedInstanceState { true })
 
@@ -180,9 +181,11 @@ fun DictionarySelector(
     var dictionaryPath: Uri? by remember { mutableStateOf(null) }
     var name by remember { mutableStateOf("") }
 
-    val dictionaries by (AmbientContext.current.applicationContext as ScrabblerApplication).dictionaryDataService.dictionaries.collectAsState(
-        listOf()
-    )
+    val dictionaries by (AmbientContext.current.applicationContext as ScrabblerApplication)
+        .dictionaryDataService
+        .dictionaries
+        .map { it.map { d -> d.name } }
+        .collectAsState(listOf())
 
     val contentResolver = AmbientContext.current.contentResolver
     val scope = rememberCoroutineScope()
@@ -206,7 +209,8 @@ fun DictionarySelector(
     InputDialog(
         initialValue = name,
         openDialog = openDialog,
-        onDismissRequest = { openDialog = false }
+        validator = { !dictionaries.contains(it) },
+        onDismissRequest = { openDialog = false },
     ) {
         openDialog = false
         try {
@@ -248,13 +252,13 @@ fun DictionarySelector(
         for (dictionary in dictionaries) {
             DropdownMenuItem(onClick = {
                 expanded = false
-                onDictionarySelected(dictionary.name)
+                onDictionarySelected(dictionary)
             }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(dictionary.name, modifier = Modifier.weight(1f))
+                    Text(dictionary, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.Delete, Modifier.clickable(onClick = {
                         expanded = false
-                        onDictionaryDeleted(dictionary.name)
+                        onDictionaryDeleted(dictionary)
                     }).padding(4.dp))
                 }
             }
