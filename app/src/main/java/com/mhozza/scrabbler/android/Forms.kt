@@ -3,6 +3,7 @@ package com.mhozza.scrabbler.android
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
 import androidx.compose.material.OutlinedTextField
@@ -11,39 +12,49 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 
 abstract class FormField<T>(
-    label: String,
     private val state: MutableState<T>,
-    widget: @Composable ((Modifier, String, MutableState<T>) -> Unit)
+    widget: @Composable() (Modifier, () -> Unit) -> Unit
 ) {
     val value: T
         get() = state.value
 
-    val widget: @Composable (Modifier) -> Unit = { modifier: Modifier ->
-        widget.invoke(modifier, label, state)
+    val widget: @Composable (Modifier, () -> Unit) -> Unit = { modifier, onSubmit ->
+        widget.invoke(modifier, onSubmit)
     }
 }
 
 class TextFormField(
     label: String = "",
     state: MutableState<String>,
-    widget: @Composable ((Modifier, String, MutableState<String>) -> Unit) = { modifier, label, state ->
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    widget: @Composable ((Modifier, () -> Unit) -> Unit) = { modifier, onSubmit ->
         OutlinedTextField(
             modifier = modifier,
             value = state.value,
             onValueChange = { state.value = it },
-            label = { Text(label) })
+            label = { Text(label) },
+            singleLine = true,
+            keyboardOptions = keyboardOptions,
+            onImeActionPerformed = {
+                    _, keyboardController ->
+                keyboardController?.hideSoftwareKeyboard()
+                onSubmit()
+            },
+        )
     }
-) : FormField<String>(label, state, widget) {
+) : FormField<String>(state, widget) {
 
 }
 
 class BooleanFormField(
     label: String = "",
     state: MutableState<Boolean>,
-    widget: @Composable ((Modifier, String, MutableState<Boolean>) -> Unit) = { modifier, label, state ->
+    widget: @Composable ((Modifier, () -> Unit) -> Unit) = { modifier, _ ->
         LabeledCheckbox(
             modifier = modifier,
             label = label,
@@ -51,7 +62,7 @@ class BooleanFormField(
             onValueChange = { state.value = it }
         )
     }
-) : FormField<Boolean>(label, state, widget)
+) : FormField<Boolean>(state, widget)
 
 @Composable
 fun LabeledCheckbox(
@@ -76,7 +87,7 @@ fun Form(
 ) {
     Column(modifier) {
         for (field in fields) {
-            field.widget(fieldModifier)
+            field.widget(fieldModifier, onSubmit)
         }
         Button(
             modifier = fieldModifier,

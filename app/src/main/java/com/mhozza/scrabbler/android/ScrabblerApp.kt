@@ -11,6 +11,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -22,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.SoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -86,11 +89,13 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
 
 @Composable
 fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: String?) {
-    val wordField = TextFormField("Word", savedInstanceState { "" })
-    val prefixField = TextFormField("Prefix", savedInstanceState { "" })
-    val containsField = TextFormField("Contains", savedInstanceState { "" })
-    val suffixField = TextFormField("Suffix", savedInstanceState { "" })
-    val regexFilterField = TextFormField("Filter (regex)", savedInstanceState { "" })
+    val keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
+
+    val wordField = TextFormField("Word", savedInstanceState { "" }, keyboardOptions)
+    val prefixField = TextFormField("Prefix", savedInstanceState { "" }, keyboardOptions)
+    val containsField = TextFormField("Contains", savedInstanceState { "" }, keyboardOptions)
+    val suffixField = TextFormField("Suffix", savedInstanceState { "" }, keyboardOptions)
+    val regexFilterField = TextFormField("Filter (regex)", savedInstanceState { "" }, keyboardOptions)
     val useAllLettersField = BooleanFormField("Use all letters", savedInstanceState { true })
     val removeAccentsField = BooleanFormField("Remove accents", savedInstanceState { true })
 
