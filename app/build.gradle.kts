@@ -8,12 +8,12 @@ val kotlinVersion: String by rootProject.extra
 val composeVersion: String by rootProject.extra
 
 android {
-    compileSdk = 30
+    compileSdk = 31
 
     defaultConfig {
         applicationId = "com.mhozza.scrabbler.android"
         minSdk = 28
-        targetSdk = 30
+        targetSdk = 31
         versionCode = 1
         versionName = "1.0"
 
