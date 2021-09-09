@@ -3,6 +3,7 @@ package com.mhozza.scrabbler.android
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
@@ -11,45 +12,45 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 
 abstract class FormField<T>(
     private val state: MutableState<T>,
-    widget: @Composable() (Modifier, () -> Unit) -> Unit
+    private val _widget: @Composable (Modifier, () -> Unit) -> Unit
 ) {
     val value: T
         get() = state.value
 
     val widget: @Composable (Modifier, () -> Unit) -> Unit = { modifier, onSubmit ->
-        widget.invoke(modifier, onSubmit)
+        _widget.invoke(modifier, onSubmit)
     }
 }
 
-class TextFormField(
+class TextFormField @OptIn(ExperimentalComposeUiApi::class) constructor(
     label: String = "",
     state: MutableState<String>,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
     widget: @Composable ((Modifier, () -> Unit) -> Unit) = { modifier, onSubmit ->
+        val keyboardController = LocalSoftwareKeyboardController.current
         OutlinedTextField(
-            modifier = modifier,
             value = state.value,
             onValueChange = { state.value = it },
+            modifier = modifier,
             label = { Text(label) },
             singleLine = true,
             keyboardOptions = keyboardOptions,
-            onImeActionPerformed = {
-                    _, keyboardController ->
-                keyboardController?.hideSoftwareKeyboard()
+            keyboardActions = KeyboardActions(onSearch = {
+                keyboardController?.hide()
                 onSubmit()
-            },
+            })
         )
     }
-) : FormField<String>(state, widget) {
-
-}
+) : FormField<String>(state, widget)
 
 class BooleanFormField(
     label: String = "",
@@ -102,9 +103,9 @@ fun Form(
 @Composable
 fun FormExample() {
     val fields = listOf(
-        TextFormField("Foo", mutableStateOf("")),
-        TextFormField("Bar", mutableStateOf("initial value")),
-        BooleanFormField("Checkbox", mutableStateOf(false))
+        TextFormField("Foo", remember { mutableStateOf("") }),
+        TextFormField("Bar", remember { mutableStateOf("initial value") }),
+        BooleanFormField("Checkbox", remember { mutableStateOf(false) })
     )
     Form(fields = fields)
 }

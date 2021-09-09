@@ -8,9 +8,9 @@ import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -18,11 +18,11 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.savedinstancestate.savedInstanceState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.AmbientContext
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,8 +38,8 @@ private val CONTENT_PADDING = 8.dp
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
-    var selectedDictionary: String? by savedInstanceState { null }
-    val application = AmbientContext.current.applicationContext as ScrabblerApplication
+    var selectedDictionary: String? by rememberSaveable { mutableStateOf(null) }
+    val application = LocalContext.current.applicationContext as ScrabblerApplication
 
     Scaffold(scaffoldState = scaffoldState,
         topBar = {
@@ -70,19 +70,25 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                     )
                 })
         }) {
-        ScrollableColumn {
-            AnimatedVisibility(visible = selectedDictionary != null) {
-                ScrabblerForm(scrabblerViewModel, selectedDictionary)
+        LazyColumn {
+            item {
+                AnimatedVisibility(visible = selectedDictionary != null) {
+                    ScrabblerForm(scrabblerViewModel, selectedDictionary)
+                }
             }
             if (selectedDictionary == null) {
-                Text(
-                    text = "Please select dictionary.",
-                    style = MaterialTheme.typography.h1,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                item {
+                    Text(
+                        text = "Please select dictionary.",
+                        style = MaterialTheme.typography.h1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
-            Results(scrabblerViewModel)
+            item {
+                Results(scrabblerViewModel)
+            }
         }
     }
 }
@@ -91,14 +97,14 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
 fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: String?) {
     val keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
 
-    val wordField = TextFormField("Word", savedInstanceState { "" }, keyboardOptions)
-    val prefixField = TextFormField("Prefix", savedInstanceState { "" }, keyboardOptions)
-    val containsField = TextFormField("Contains", savedInstanceState { "" }, keyboardOptions)
-    val suffixField = TextFormField("Suffix", savedInstanceState { "" }, keyboardOptions)
+    val wordField = TextFormField("Word", rememberSaveable { mutableStateOf("") }, keyboardOptions)
+    val prefixField = TextFormField("Prefix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
+    val containsField = TextFormField("Contains", rememberSaveable { mutableStateOf("") }, keyboardOptions)
+    val suffixField = TextFormField("Suffix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
     val regexFilterField =
-        TextFormField("Filter (regex)", savedInstanceState { "" }, keyboardOptions)
-    val useAllLettersField = BooleanFormField("Use all letters", savedInstanceState { true })
-    val removeAccentsField = BooleanFormField("Remove accents", savedInstanceState { true })
+        TextFormField("Filter (regex)", rememberSaveable { mutableStateOf("") }, keyboardOptions)
+    val useAllLettersField = BooleanFormField("Use all letters", rememberSaveable { mutableStateOf(true) })
+    val removeAccentsField = BooleanFormField("Remove accents", rememberSaveable { mutableStateOf(true) })
 
     if (wordField.value.isEmpty()) {
         scrabblerViewModel.clearResults()
@@ -147,7 +153,7 @@ fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifie
         }
     } else if (results != null) {
         Column(modifier.fillMaxWidth().padding(CONTENT_PADDING)) {
-            Spacer(modifier = Modifier.preferredHeight(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             if (results!!.isEmpty()) {
                 Text(
                     "No results",
@@ -181,13 +187,13 @@ fun DictionarySelector(
     var dictionaryPath: Uri? by remember { mutableStateOf(null) }
     var name by remember { mutableStateOf("") }
 
-    val dictionaries by (AmbientContext.current.applicationContext as ScrabblerApplication)
+    val dictionaries by (LocalContext.current.applicationContext as ScrabblerApplication)
         .dictionaryDataService
         .dictionaries
         .map { it.map { d -> d.name } }
         .collectAsState(listOf())
 
-    val contentResolver = AmbientContext.current.contentResolver
+    val contentResolver = LocalContext.current.contentResolver
     val scope = rememberCoroutineScope()
 
     val openFileLauncher =
@@ -221,45 +227,45 @@ fun DictionarySelector(
         }
     }
 
-    DropdownMenu(
-        toggleModifier = Modifier.padding(CONTENT_PADDING),
-        dropdownModifier = Modifier.fillMaxWidth(),
-        toggle = {
-            Button(onClick = { expanded = true }) {
-                Icon(
-                    modifier = Modifier.padding(end = 4.dp),
-                    imageVector = vectorResource(id = R.drawable.ic_menu_book_black_18dp)
-                )
-                Text(selectedDictionary ?: "Select dictionary")
-                Icon(Icons.Default.ArrowDropDown)
-            }
-        },
-        expanded = expanded,
-        onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(onClick = {
-            expanded = false
-            openFileLauncher.launch(
-                arrayOf(
-                    "text/plain",
-                    "application/gzip",
-                    "text/csv",
-                    "text/comma-separated-values"
-                )
+    Box(modifier = Modifier.padding(CONTENT_PADDING)) {
+        Button(onClick = { expanded = true }) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_menu_book_black_18dp),
+                contentDescription = null,
+                modifier = Modifier.padding(end = 4.dp)
             )
-        }) {
-            Text("Load from file.")
+            Text(selectedDictionary ?: "Select dictionary")
+            Icon(Icons.Default.ArrowDropDown, null)
         }
-        for (dictionary in dictionaries) {
+        DropdownMenu(
+            modifier = Modifier.fillMaxWidth(),
+            expanded = expanded,
+            onDismissRequest = { expanded = false }) {
             DropdownMenuItem(onClick = {
                 expanded = false
-                onDictionarySelected(dictionary)
+                openFileLauncher.launch(
+                    arrayOf(
+                        "text/plain",
+                        "application/gzip",
+                        "text/csv",
+                        "text/comma-separated-values"
+                    )
+                )
             }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(dictionary, modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.Delete, Modifier.clickable(onClick = {
-                        expanded = false
-                        onDictionaryDeleted(dictionary)
-                    }).padding(4.dp))
+                Text("Load from file.")
+            }
+            for (dictionary in dictionaries) {
+                DropdownMenuItem(onClick = {
+                    expanded = false
+                    onDictionarySelected(dictionary)
+                }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(dictionary, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", Modifier.clickable(onClick = {
+                            expanded = false
+                            onDictionaryDeleted(dictionary)
+                        }).padding(4.dp))
+                    }
                 }
             }
         }
