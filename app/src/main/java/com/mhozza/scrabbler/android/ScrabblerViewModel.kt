@@ -36,10 +36,17 @@ class ScrabblerViewModel(application: Application) : AndroidViewModel(applicatio
                 resultsJob!!.cancel()
             }
             resultsJob = viewModelScope.launch {
-                _results.value =
-                    getApplication<ScrabblerApplication>().scrabblerDataService.findPermutations(
-                        dictionary, newQuery
-                    )
+                if (newQuery is PermutationsScrabblerQuery) {
+                    _results.value =
+                        getApplication<ScrabblerApplication>().scrabblerDataService.findPermutations(
+                            dictionary, newQuery
+                        )
+                } else if (newQuery is SearchScrabblerQuery) {
+                    _results.value =
+                        getApplication<ScrabblerApplication>().scrabblerDataService.search(
+                            dictionary, newQuery
+                        )
+                }
                 _loadingState.value = LoadingState.IDLE
             }
         }

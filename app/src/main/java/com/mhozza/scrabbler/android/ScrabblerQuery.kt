@@ -1,6 +1,8 @@
 package com.mhozza.scrabbler.android
 
-data class ScrabblerQuery(
+sealed class ScrabblerQuery()
+
+data class PermutationsScrabblerQuery(
     val word: String,
     val prefix: String? = null,
     val suffix: String? = null,
@@ -8,4 +10,9 @@ data class ScrabblerQuery(
     val regexFilter: String? = null,
     val useAllLetters: Boolean = true,
     val removeAccents: Boolean = true,
-)
+): ScrabblerQuery()
+
+data class SearchScrabblerQuery(
+    val word: String,
+    val removeAccents: Boolean = true,
+): ScrabblerQuery()

@@ -16,6 +16,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -34,12 +36,29 @@ import java.nio.file.Paths
 
 private val CONTENT_PADDING = 8.dp
 
+enum class SearchMode(
+    val icon: @Composable () -> Unit = {},
+    val label: @Composable () -> Unit = {},
+) {
+    PERMUTATIONS(
+        icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+        label = { Text("Permutations") }
+    ),
+    SEARCH(
+        icon = { Icon(Icons.Default.Search, contentDescription = null) },
+        label = { Text("Search") }
+    ),
+}
+
 @ExperimentalAnimationApi
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
     var selectedDictionary: String? by rememberSaveable { mutableStateOf(null) }
     val application = LocalContext.current.applicationContext as ScrabblerApplication
+    var selectedSearchMode by remember {
+        mutableStateOf(SearchMode.PERMUTATIONS)
+    }
 
     Scaffold(scaffoldState = scaffoldState,
         topBar = {
@@ -69,11 +88,26 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                         }
                     )
                 })
-        }) {
+        },
+        bottomBar = {
+            AnimatedVisibility(visible = selectedDictionary != null) {
+                BottomNavigation {
+                    for (mode in enumValues<SearchMode>()) {
+                        BottomNavigationItem(
+                            selected = mode == selectedSearchMode,
+                            onClick = { selectedSearchMode = mode },
+                            icon = mode.icon,
+                            label = mode.label,
+                        )
+                    }
+                }
+            }
+        }
+    ) {
         LazyColumn {
             item {
                 AnimatedVisibility(visible = selectedDictionary != null) {
-                    ScrabblerForm(scrabblerViewModel, selectedDictionary)
+                    ScrabblerForm(scrabblerViewModel, selectedDictionary, selectedSearchMode)
                 }
             }
             if (selectedDictionary == null) {
@@ -94,41 +128,58 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
 }
 
 @Composable
-fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: String?) {
+fun ScrabblerForm(
+    scrabblerViewModel: ScrabblerViewModel,
+    selectedDictionary: String?,
+    searchMode: SearchMode
+) {
     val keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
 
     val wordField = TextFormField("Word", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val prefixField = TextFormField("Prefix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val containsField = TextFormField("Contains", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val suffixField = TextFormField("Suffix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
+    val prefixField =
+        TextFormField("Prefix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
+    val containsField =
+        TextFormField("Contains", rememberSaveable { mutableStateOf("") }, keyboardOptions)
+    val suffixField =
+        TextFormField("Suffix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
     val regexFilterField =
         TextFormField("Filter (regex)", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val useAllLettersField = BooleanFormField("Use all letters", rememberSaveable { mutableStateOf(true) })
-    val removeAccentsField = BooleanFormField("Remove accents", rememberSaveable { mutableStateOf(true) })
+    val useAllLettersField =
+        BooleanFormField("Use all letters", rememberSaveable { mutableStateOf(true) })
+    val removeAccentsField =
+        BooleanFormField("Remove accents", rememberSaveable { mutableStateOf(true) })
 
     if (wordField.value.isEmpty()) {
         scrabblerViewModel.clearResults()
     }
 
+    val permutationSearchFields = listOf(
+        wordField,
+        prefixField,
+        containsField,
+        suffixField,
+        regexFilterField,
+        useAllLettersField,
+        removeAccentsField,
+    )
+
+    val simpleSearchFields = listOf(
+        wordField,
+        removeAccentsField,
+    )
+
     Surface(elevation = 5.dp) {
         Form(
             modifier = Modifier.padding(CONTENT_PADDING),
-            fieldModifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            fields = listOf(
-                wordField,
-                prefixField,
-                containsField,
-                suffixField,
-                regexFilterField,
-                useAllLettersField,
-                removeAccentsField,
-            ),
+            fieldModifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            fields = if (searchMode == SearchMode.PERMUTATIONS) permutationSearchFields else simpleSearchFields,
             submitLabel = "Search",
             onSubmit = {
                 if (selectedDictionary != null) {
-                    scrabblerViewModel.onQueryChanged(
-                        selectedDictionary,
-                        ScrabblerQuery(
+                    val query = if (searchMode == SearchMode.PERMUTATIONS) {
+                        PermutationsScrabblerQuery(
                             word = wordField.value,
                             prefix = prefixField.value,
                             suffix = suffixField.value,
@@ -137,6 +188,15 @@ fun ScrabblerForm(scrabblerViewModel: ScrabblerViewModel, selectedDictionary: St
                             useAllLetters = useAllLettersField.value,
                             removeAccents = removeAccentsField.value,
                         )
+                    } else {
+                        SearchScrabblerQuery(
+                            word = wordField.value,
+                            removeAccents = removeAccentsField.value,
+                        )
+                    }
+                    scrabblerViewModel.onQueryChanged(
+                        selectedDictionary,
+                        query,
                     )
                 }
             })
@@ -148,11 +208,19 @@ fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifie
     val loadingState by scrabblerViewModel.loadingState.observeAsState()
     val results by scrabblerViewModel.results.observeAsState()
     if (loadingState == LoadingState.LOADING) {
-        Box(modifier.fillMaxWidth().padding(CONTENT_PADDING), contentAlignment = Alignment.Center) {
+        Box(
+            modifier
+                .fillMaxWidth()
+                .padding(CONTENT_PADDING), contentAlignment = Alignment.Center
+        ) {
             CircularProgressIndicator()
         }
     } else if (results != null) {
-        Column(modifier.fillMaxWidth().padding(CONTENT_PADDING)) {
+        Column(
+            modifier
+                .fillMaxWidth()
+                .padding(CONTENT_PADDING)
+        ) {
             Spacer(modifier = Modifier.height(8.dp))
             if (results!!.isEmpty()) {
                 Text(
@@ -261,10 +329,15 @@ fun DictionarySelector(
                 }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(dictionary, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", Modifier.clickable(onClick = {
-                            expanded = false
-                            onDictionaryDeleted(dictionary)
-                        }).padding(4.dp))
+                        Icon(
+                            Icons.Default.Delete, contentDescription = "Delete",
+                            Modifier
+                                .clickable(onClick = {
+                                    expanded = false
+                                    onDictionaryDeleted(dictionary)
+                                })
+                                .padding(4.dp)
+                        )
                     }
                 }
             }

@@ -17,7 +17,7 @@ class ScrabblerDataService(
 ) {
     private val scrabblerFactory = ScrabblerFactory(dictionaryDataService, contentResolver)
 
-    suspend fun findPermutations(dictionaryName: String, query: ScrabblerQuery): List<String> =
+    suspend fun findPermutations(dictionaryName: String, query: PermutationsScrabblerQuery): List<String> =
         withContext(Dispatchers.Default) {
             scrabblerFactory.get(dictionaryName, query.removeAccents).findPermutations(
                 query.word,
@@ -26,6 +26,14 @@ class ScrabblerDataService(
                 contains = query.contains,
                 regexFilter = query.regexFilter,
                 useAllLetters = query.useAllLetters,
+                limit = WORD_COUNT_LIMIT,
+            )
+        }
+
+    suspend fun search(dictionaryName: String, query: SearchScrabblerQuery): List<String> =
+        withContext(Dispatchers.Default) {
+            scrabblerFactory.get(dictionaryName, query.removeAccents).findByRegex(
+                query.word,
                 limit = WORD_COUNT_LIMIT,
             )
         }
