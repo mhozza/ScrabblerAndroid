@@ -80,6 +80,9 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     testImplementation("androidx.room:room-testing:$roomVersion")
 
+    implementation("com.google.flogger:flogger:0.6")
+    implementation("com.google.flogger:flogger-system-backend:0.6")
+
     implementation("com.github.mhozza.ScrabblerKt:scrabblerlib:2.2.1")
     implementation("com.github.mhozza.ScrabblerKt:datastructures:2.2.1")
 }

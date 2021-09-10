@@ -10,13 +10,17 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.google.common.flogger.FluentLogger
 import com.mhozza.scrabbler.android.ui.ScrabblerTheme
+
+val logger: FluentLogger = FluentLogger.forEnclosingClass()
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -49,15 +53,16 @@ fun InputDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
+                            .focusTarget()
                             .focusRequester(requester),
                         value = value,
                         onValueChange = { value = it },
                         isError = !validator(value.text)
                     )
-                    DisposableEffect(Unit) {
+                    LaunchedEffect(Unit) {
+                        logger.atFine().log("Requesting focus.\n%s\n%s", requester, keyboardController)
                         requester.requestFocus()
                         keyboardController?.show()
-                        onDispose { }
                     }
                     Row {
                         Button(
