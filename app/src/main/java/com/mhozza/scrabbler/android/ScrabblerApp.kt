@@ -104,7 +104,7 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
             }
         }
     ) {
-        LazyColumn {
+        LazyColumn(modifier = Modifier.padding(it)) {
             item {
                 AnimatedVisibility(visible = selectedDictionary != null) {
                     ScrabblerForm(scrabblerViewModel, selectedDictionary, selectedSearchMode)
