@@ -8,6 +8,8 @@ import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,10 +31,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.insets.*
 import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.nio.file.Paths
+import com.google.accompanist.insets.ui.TopAppBar
+import com.google.accompanist.insets.ui.Scaffold
+import com.google.accompanist.insets.ui.BottomNavigation
 
 private val CONTENT_PADDING = 8.dp
 
@@ -60,9 +66,15 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
         mutableStateOf(SearchMode.PERMUTATIONS)
     }
 
-    Scaffold(scaffoldState = scaffoldState,
+    Scaffold(
+        scaffoldState = scaffoldState,
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                contentPadding = rememberInsetsPaddingValues(
+                    insets = LocalWindowInsets.current.statusBars,
+                    applyBottom = false,
+                ),
                 backgroundColor = MaterialTheme.colors.primary,
                 title = { Text("Scrabbler") },
                 actions = {
@@ -90,8 +102,19 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                 })
         },
         bottomBar = {
-            AnimatedVisibility(visible = selectedDictionary != null) {
-                BottomNavigation {
+            AnimatedVisibility(
+                visible = selectedDictionary != null,
+                enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+            ) {
+                BottomNavigation(
+                    contentPadding = rememberInsetsPaddingValues(
+                        insets = derivedWindowInsetsTypeOf(
+                            LocalWindowInsets.current.ime,
+                            LocalWindowInsets.current.navigationBars
+                        ),
+                        applyTop = false
+                    )
+                ) {
                     for (mode in enumValues<SearchMode>()) {
                         BottomNavigationItem(
                             selected = mode == selectedSearchMode,
@@ -106,7 +129,10 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     ) {
         LazyColumn(modifier = Modifier.padding(it)) {
             item {
-                AnimatedVisibility(visible = selectedDictionary != null) {
+                AnimatedVisibility(
+                    visible = selectedDictionary != null,
+                    enter = slideInVertically() + fadeIn(),
+                ) {
                     ScrabblerForm(scrabblerViewModel, selectedDictionary, selectedSearchMode)
                 }
             }

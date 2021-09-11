@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.mhozza.scrabbler.android"
-        minSdk = 28
+        minSdk = 30
         targetSdk = 31
         versionCode = 1
         versionName = "1.0"
@@ -82,6 +82,9 @@ dependencies {
 
     implementation("com.google.flogger:flogger:0.6")
     implementation("com.google.flogger:flogger-system-backend:0.6")
+
+    implementation("com.google.accompanist:accompanist-insets:0.18.0")
+    implementation("com.google.accompanist:accompanist-insets-ui:0.18.0")
 
     implementation("com.github.mhozza.ScrabblerKt:scrabblerlib:2.2.1")
     implementation("com.github.mhozza.ScrabblerKt:datastructures:2.2.1")
