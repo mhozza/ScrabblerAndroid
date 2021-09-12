@@ -138,27 +138,33 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
             }
         }
     ) {
-        LazyColumn(modifier = Modifier.padding(it)) {
-            item {
-                AnimatedVisibility(
-                    visible = selectedDictionary != null,
-                    enter = slideInVertically() + fadeIn(),
-                ) {
-                    ScrabblerForm(scrabblerViewModel, selectedDictionary, selectedSearchMode)
-                }
+        if (selectedDictionary == null) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(it),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Please select dictionary.",
+                    style = MaterialTheme.typography.h1,
+                    textAlign = TextAlign.Center,
+                )
             }
-            if (selectedDictionary == null) {
+        } else {
+            LazyColumn(modifier = Modifier
+                .fillMaxSize()
+                .padding(it)) {
                 item {
-                    Text(
-                        text = "Please select dictionary.",
-                        style = MaterialTheme.typography.h1,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    AnimatedVisibility(
+                        visible = selectedDictionary != null,
+                        enter = slideInVertically() + fadeIn(),
+                    ) {
+                        ScrabblerForm(scrabblerViewModel, selectedDictionary, selectedSearchMode)
+                    }
                 }
-            }
-            item {
-                Results(scrabblerViewModel)
+
+                item {
+                    Results(scrabblerViewModel)
+                }
             }
         }
     }
