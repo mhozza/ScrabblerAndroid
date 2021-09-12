@@ -61,15 +61,15 @@ enum class SearchMode(
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
     val application = LocalContext.current.applicationContext as ScrabblerApplication
-    val selectedDictionary by application.dictionaryDataService.getDefaultDictionary().collectAsState(null)
+    val selectedDictionary by application.settingsDataService.selectedDictionary.get()
+        .collectAsState(null)
+    val selectedSearchMode by application.settingsDataService.selectedMode.get().collectAsState(
+        initial = SearchMode.PERMUTATIONS
+    )
 
-    var selectedSearchMode by remember {
-        mutableStateOf(SearchMode.PERMUTATIONS)
-    }
-
-    fun setDefaultDictionary(dictionary: String?) {
+    fun setSelectedDictionary(dictionary: String?) {
         application.applicationScope.launch {
-            application.dictionaryDataService.setDefaultDictionary(dictionary)
+            application.settingsDataService.selectedDictionary.set(dictionary)
         }
     }
 
@@ -89,15 +89,15 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                         scaffoldState,
                         selectedDictionary,
                         onDictionarySelected = {
-                           setDefaultDictionary(it)
+                            setSelectedDictionary(it)
                         },
                         onNewDictionarySelected = { name, path ->
                             scrabblerViewModel.onLoadNewDictionary(name, path)
-                            setDefaultDictionary(name)
+                            setSelectedDictionary(name)
                         },
                         onDictionaryDeleted = {
                             if (it == selectedDictionary) {
-                                setDefaultDictionary(null)
+                                setSelectedDictionary(null)
                             }
                             with(application) {
                                 applicationScope.launch {
@@ -125,7 +125,11 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                     for (mode in enumValues<SearchMode>()) {
                         BottomNavigationItem(
                             selected = mode == selectedSearchMode,
-                            onClick = { selectedSearchMode = mode },
+                            onClick = {
+                                application.applicationScope.launch {
+                                    application.settingsDataService.selectedMode.set(mode)
+                                }
+                            },
                             icon = mode.icon,
                             label = mode.label,
                         )

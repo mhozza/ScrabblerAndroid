@@ -13,7 +13,6 @@ import java.io.FileNotFoundException
 
 class DictionaryDataService(
     private val dictionaryItemDao: DictionaryItemDao,
-    private val settingsDao: SettingsDao,
     private val contentResolver: ContentResolver,
 ) {
     val dictionaries = dictionaryItemDao.getAll().filterExisting()
@@ -34,18 +33,6 @@ class DictionaryDataService(
 
     suspend fun getDictionaryUri(name: String): String? {
         return dictionaryItemDao.getByName(name)?.path
-    }
-
-    fun getDefaultDictionary(): Flow<String?> {
-        return settingsDao.get(DEFAULT_DICTIONARY_KEY)
-    }
-
-    suspend fun setDefaultDictionary(dictionaryName: String?) {
-        if (dictionaryName == null) {
-            settingsDao.delete(DEFAULT_DICTIONARY_KEY)
-        } else {
-            settingsDao.set(DEFAULT_DICTIONARY_KEY to dictionaryName)
-        }
     }
 
     private fun Flow<List<DictionaryItem>>.filterExisting(): Flow<List<DictionaryItem>> {
@@ -72,9 +59,5 @@ class DictionaryDataService(
                 }
             }
         }
-    }
-
-    companion object {
-        private const val DEFAULT_DICTIONARY_KEY = "default_dictionary"
     }
 }

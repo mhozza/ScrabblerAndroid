@@ -13,7 +13,6 @@ class ScrabblerApplication : Application() {
     val dictionaryDataService by lazy {
         DictionaryDataService(
             database.dictionaryItemDao(),
-            database.settingsDao(),
             contentResolver,
         )
     }
@@ -22,5 +21,8 @@ class ScrabblerApplication : Application() {
             dictionaryDataService,
             contentResolver,
         )
+    }
+    val settingsDataService by lazy {
+        SettingsDataService(database.settingsDao())
     }
 }
