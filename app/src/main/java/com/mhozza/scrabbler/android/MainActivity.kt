@@ -31,10 +31,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             ProvideWindowInsets(windowInsetsAnimationsEnabled = true) {
                 ScrabblerTheme {
-                    // A surface container using the 'background' color from the theme
-                    Surface(color = MaterialTheme.colors.background, modifier = Modifier.fillMaxSize()) {
-                        ScrabblerApp(scrabblerViewModel)
-                    }
+                    ScrabblerApp(scrabblerViewModel)
                 }
             }
         }
