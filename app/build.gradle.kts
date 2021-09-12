@@ -73,7 +73,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.3.1")
     implementation("androidx.fragment:fragment-ktx:1.3.6")
 
-    val roomVersion = "2.3.0"
+    val roomVersion = "2.4.0-alpha04"
     implementation("androidx.room:room-runtime:$roomVersion")
     annotationProcessor("androidx.room:room-compiler:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")

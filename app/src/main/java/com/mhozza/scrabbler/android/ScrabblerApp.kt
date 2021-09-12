@@ -60,10 +60,17 @@ enum class SearchMode(
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
-    var selectedDictionary: String? by rememberSaveable { mutableStateOf(null) }
     val application = LocalContext.current.applicationContext as ScrabblerApplication
+    val selectedDictionary by application.dictionaryDataService.getDefaultDictionary().collectAsState(null)
+
     var selectedSearchMode by remember {
         mutableStateOf(SearchMode.PERMUTATIONS)
+    }
+
+    fun setDefaultDictionary(dictionary: String?) {
+        application.applicationScope.launch {
+            application.dictionaryDataService.setDefaultDictionary(dictionary)
+        }
     }
 
     Scaffold(
@@ -82,15 +89,15 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                         scaffoldState,
                         selectedDictionary,
                         onDictionarySelected = {
-                            selectedDictionary = it
+                           setDefaultDictionary(it)
                         },
                         onNewDictionarySelected = { name, path ->
                             scrabblerViewModel.onLoadNewDictionary(name, path)
-                            selectedDictionary = name
+                            setDefaultDictionary(name)
                         },
                         onDictionaryDeleted = {
                             if (it == selectedDictionary) {
-                                selectedDictionary = null
+                                setDefaultDictionary(null)
                             }
                             with(application) {
                                 applicationScope.launch {
