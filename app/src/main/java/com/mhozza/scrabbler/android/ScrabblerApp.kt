@@ -1,5 +1,6 @@
 package com.mhozza.scrabbler.android
 
+import AddDictionaryScreen
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
@@ -31,6 +32,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.accompanist.insets.*
 import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 import kotlinx.coroutines.flow.map
@@ -39,6 +46,8 @@ import java.nio.file.Paths
 import com.google.accompanist.insets.ui.TopAppBar
 import com.google.accompanist.insets.ui.Scaffold
 import com.google.accompanist.insets.ui.BottomNavigation
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 private val CONTENT_PADDING = 8.dp
 
@@ -59,6 +68,28 @@ enum class SearchMode(
 @ExperimentalAnimationApi
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "home") {
+        composable("home") {
+            ScrabblerScreen(navController = navController, scrabblerViewModel = scrabblerViewModel)
+        }
+        composable("addDictionary/{path}/{defaultName}",
+                arguments = listOf(
+                    navArgument("path") { type = NavType.StringType },
+                    navArgument("defaultName") { type = NavType.StringType },
+                )
+        ) {
+            val pathUri = requireNotNull(Uri.parse(URLDecoder.decode(it.arguments?.getString("path"), "utf-8")))
+            val defaultName = requireNotNull(it.arguments?.getString("defaultName"))
+            AddDictionaryScreen(navController = navController,
+                pathUri, defaultName)
+        }
+    }
+}
+
+@ExperimentalAnimationApi
+@Composable
+fun ScrabblerScreen(navController: NavController, scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
     val application = LocalContext.current.applicationContext as ScrabblerApplication
     val selectedDictionary by application.settingsDataService.selectedDictionary.get().map {
@@ -91,6 +122,7 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                 title = { Text("Scrabbler") },
                 actions = {
                     DictionarySelector(
+                        navController,
                         scaffoldState,
                         selectedDictionary,
                         onDictionarySelected = {
@@ -145,7 +177,9 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     ) {
         if (selectedDictionary == null) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(it),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -292,6 +326,7 @@ fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifie
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DictionarySelector(
+    navController: NavController,
     scaffoldState: ScaffoldState,
     selectedDictionary: String? = null,
     onDictionarySelected: (String?) -> Unit = {},
@@ -325,7 +360,9 @@ fun DictionarySelector(
                 uniqueName
             } ?: ""
             dictionaryPath = uri
-            openDialog = true
+            val encodedPath = URLEncoder.encode(dictionaryPath.toString(), "utf-8")
+            navController.navigate("addDictionary/$encodedPath/$name")
+//            openDialog = true
         }
 
     InputDialog(

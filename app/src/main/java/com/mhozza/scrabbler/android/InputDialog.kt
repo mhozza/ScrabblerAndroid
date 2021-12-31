@@ -45,10 +45,10 @@ fun InputDialog(
             onDismissRequest()
         }) {
             Surface(elevation = 8.dp, shape = MaterialTheme.shapes.medium) {
-                val requester = remember { FocusRequester() }
-                val keyboardController = LocalSoftwareKeyboardController.current
-
                 Column {
+                    val requester = remember { FocusRequester() }
+                    val keyboardController = LocalSoftwareKeyboardController.current
+
                     OutlinedTextField(
                         singleLine = true,
                         modifier = Modifier
