@@ -73,7 +73,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.4.0")
     implementation("androidx.fragment:fragment-ktx:1.4.0")
 
-    val roomVersion = "2.4.0-alpha04"
+    val roomVersion = "2.4.0"
     implementation("androidx.room:room-runtime:$roomVersion")
     annotationProcessor("androidx.room:room-compiler:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
@@ -83,8 +83,8 @@ dependencies {
     implementation("com.google.flogger:flogger:0.6")
     implementation("com.google.flogger:flogger-system-backend:0.6")
 
-    implementation("com.google.accompanist:accompanist-insets:0.18.0")
-    implementation("com.google.accompanist:accompanist-insets-ui:0.18.0")
+    implementation("com.google.accompanist:accompanist-insets:0.20.3")
+    implementation("com.google.accompanist:accompanist-insets-ui:0.20.3")
 
     implementation("com.github.mhozza.ScrabblerKt:scrabblerlib:2.2.1")
     implementation("com.github.mhozza.ScrabblerKt:datastructures:2.2.1")
