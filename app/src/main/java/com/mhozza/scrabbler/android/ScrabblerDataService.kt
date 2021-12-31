@@ -62,7 +62,7 @@ class ScrabblerDataService(
 
         private suspend fun loadDictionary(name: String, removeAccents: Boolean): Dictionary {
             val uri = dictionaryDataService.getDictionaryUri(name)
-                ?: throw java.lang.IllegalStateException("Dictionary not found.")
+                ?: throw java.lang.IllegalStateException("Dictionary not found: `$name`.")
             return loadDictionaryFromFile(uri, removeAccents)
         }
 

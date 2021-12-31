@@ -61,7 +61,12 @@ enum class SearchMode(
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
     val scaffoldState = rememberScaffoldState()
     val application = LocalContext.current.applicationContext as ScrabblerApplication
-    val selectedDictionary by application.settingsDataService.selectedDictionary.get()
+    val selectedDictionary by application.settingsDataService.selectedDictionary.get().map {
+        if (it == null || application.dictionaryDataService.getDictionaryUri(it) == null)
+            null
+        else
+            it
+    }
         .collectAsState(null)
     val selectedSearchMode by application.settingsDataService.selectedMode.get().collectAsState(
         initial = SearchMode.PERMUTATIONS
