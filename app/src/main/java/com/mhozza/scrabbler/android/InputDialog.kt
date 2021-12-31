@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -44,25 +45,27 @@ fun InputDialog(
             onDismissRequest()
         }) {
             Surface(elevation = 8.dp, shape = MaterialTheme.shapes.medium) {
-                Column {
-                    val requester = remember { FocusRequester() }
-                    val keyboardController = LocalSoftwareKeyboardController.current
+                val requester = remember { FocusRequester() }
+                val keyboardController = LocalSoftwareKeyboardController.current
 
+                Column {
                     OutlinedTextField(
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp)
-                            .focusTarget()
-                            .focusRequester(requester),
+                            .focusRequester(requester)
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    keyboardController?.show()
+                                }
+                            },
                         value = value,
                         onValueChange = { value = it },
                         isError = !validator(value.text)
                     )
-                    LaunchedEffect(Unit) {
-                        logger.atFine().log("Requesting focus.\n%s\n%s", requester, keyboardController)
+                    SideEffect {
                         requester.requestFocus()
-                        keyboardController?.show()
                     }
                     Row {
                         Button(
