@@ -1,7 +1,10 @@
+import org.jetbrains.kotlin.cli.common.incrementalCompilationIsEnabled
+
 plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("org.jetbrains.kotlin.kapt")
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.androidx.room)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -17,15 +20,16 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 
-        javaCompileOptions {
-            annotationProcessorOptions {
-                arguments += mapOf(
-                        "room.schemaLocation" to "$projectDir/schemas",
-                        "room.incremental" to "true",
-                        "room.expandProjection" to  "true")
-            }
-        }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
+
+    ksp {
+        arg("room.incremental", "true")
+        arg("room.expandProjection", "true")
+        arg("room.generateKotlin", "true")
     }
 
     buildTypes {
@@ -73,7 +77,7 @@ dependencies {
 
     implementation(libs.androidx.room.runtime)
     annotationProcessor(libs.androidx.room.compiler)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     testImplementation(libs.androidx.room.testing)
 

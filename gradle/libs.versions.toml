@@ -1,22 +1,22 @@
 [versions]
+agp = "8.5.0"
 accompanistInsets = "0.20.3"
-activityKtx = "1.4.0"
+activityKtx = "1.9.0"
 appcompatVersion = "1.4.0"
 coreKtxVersion = "1.7.0"
 datastructuresVersion = "2.2.1"
 espressoCore = "3.4.0"
 floggerVersion = "0.6"
 fragmentKtx = "1.4.0"
-gradle = "8.5.0"
 junit = "4.13.2"
 junitVersion = "1.1.3"
 kotlin = "2.0.0"
-kotlinGradlePlugin = "2.0.0"
 lifecycleVersion = "2.3.1"
 materialVersion = "1.4.0"
 roomVersion = "2.6.1"
 scrabblerlibVersion = "2.2.1"
 androidxComposeBom = "2024.06.00"
+ksp = "2.0.0-1.0.22"
 
 [libraries]
 accompanist-insets = { module = "com.google.accompanist:accompanist-insets", version.ref = "accompanistInsets" }
@@ -44,15 +44,15 @@ appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompatV
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtxVersion" }
 flogger = { module = "com.google.flogger:flogger", version.ref = "floggerVersion" }
 flogger-system-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "floggerVersion" }
-gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 junit = { module = "junit:junit", version.ref = "junit" }
-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 material = { module = "com.google.android.material:material", version.ref = "materialVersion" }
 scrabblerkt-datastructures = { module = "com.github.mhozza.ScrabblerKt:datastructures", version.ref = "datastructuresVersion" }
 scrabblerlib = { module = "com.github.mhozza.ScrabblerKt:scrabblerlib", version.ref = "scrabblerlibVersion" }
 
 [plugins]
-org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-
+android-application = { id = "com.android.application", version.ref = "agp" }
+jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+androidx-room = { id = "androidx.room", version.ref = "roomVersion" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
