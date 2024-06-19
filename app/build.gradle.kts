@@ -2,18 +2,17 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("org.jetbrains.kotlin.kapt")
+    alias(libs.plugins.compose.compiler)
 }
 
-val kotlinVersion: String by rootProject.extra
-val composeVersion: String by rootProject.extra
-
 android {
-    compileSdk = 31
+    namespace = "com.mhozza.scrabbler.android"
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.mhozza.scrabbler.android"
         minSdk = 30
-        targetSdk = 31
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -45,47 +44,45 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = composeVersion
-    }
 }
 
 dependencies {
-    val lifecycleVersion = "2.3.1"
+    val composeBom = platform(libs.androidx.compose.bom)
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
-    implementation("androidx.core:core-ktx:1.7.0")
-    implementation("androidx.appcompat:appcompat:1.4.0")
-    implementation("com.google.android.material:material:1.4.0")
-    implementation("androidx.compose.ui:ui:$composeVersion")
-    implementation("androidx.compose.material:material:$composeVersion")
-    implementation("androidx.compose.ui:ui-tooling:$composeVersion")
-    implementation("androidx.compose.runtime:runtime-livedata:$composeVersion")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion")
-    implementation("androidx.activity:activity-ktx:1.4.0")
-    implementation("androidx.activity:activity-compose:1.4.0")
-    implementation("androidx.fragment:fragment-ktx:1.4.0")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.core.ktx)
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.androidx.compose.runtime.livedata)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.savedstate)
+    implementation(libs.androidx.lifecycle.common.java8)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.fragment.ktx)
 
-    val roomVersion = "2.4.0"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    annotationProcessor("androidx.room:room-compiler:$roomVersion")
-    kapt("androidx.room:room-compiler:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    testImplementation("androidx.room:room-testing:$roomVersion")
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    kapt(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    testImplementation(libs.androidx.room.testing)
 
-    implementation("com.google.flogger:flogger:0.6")
-    implementation("com.google.flogger:flogger-system-backend:0.6")
+    implementation(libs.flogger)
+    implementation(libs.flogger.system.backend)
 
-    implementation("com.google.accompanist:accompanist-insets:0.20.3")
-    implementation("com.google.accompanist:accompanist-insets-ui:0.20.3")
+    implementation(libs.accompanist.insets)
+    implementation(libs.accompanist.insets.ui)
 
-    implementation("com.github.mhozza.ScrabblerKt:scrabblerlib:2.2.1")
-    implementation("com.github.mhozza.ScrabblerKt:datastructures:2.2.1")
+    implementation(libs.scrabblerlib)
+    implementation(libs.scrabblerkt.datastructures)
 }
