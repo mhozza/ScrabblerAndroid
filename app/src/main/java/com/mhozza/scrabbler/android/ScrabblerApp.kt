@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -253,8 +252,8 @@ fun ScrabblerForm(
 
 @Composable
 fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifier) {
-    val loadingState by scrabblerViewModel.loadingState.observeAsState()
-    val results by scrabblerViewModel.results.observeAsState()
+    val loadingState by scrabblerViewModel.loadingState.collectAsState()
+    val results by scrabblerViewModel.results.collectAsState()
     if (loadingState == LoadingState.LOADING) {
         Box(
             modifier
@@ -263,14 +262,14 @@ fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifie
         ) {
             CircularProgressIndicator()
         }
-    } else if (results != null) {
+    } else {
         Column(
             modifier
                 .fillMaxWidth()
                 .padding(CONTENT_PADDING)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
-            if (results!!.isEmpty()) {
+            if (results.isEmpty()) {
                 Text(
                     "No results",
                     style = MaterialTheme.typography.h6,
@@ -278,7 +277,7 @@ fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifie
                     color = MaterialTheme.colors.error
                 )
             }
-            for (word in results!!) {
+            for (word in results) {
                 Text(
                     word,
                     modifier = Modifier.padding(vertical = 4.dp),
