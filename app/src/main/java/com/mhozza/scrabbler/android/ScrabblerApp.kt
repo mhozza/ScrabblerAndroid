@@ -7,7 +7,6 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
@@ -45,6 +44,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -67,9 +67,8 @@ enum class SearchMode(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalAnimationApi
 @Composable
-fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
+fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
     val application = LocalContext.current.applicationContext as ScrabblerApplication
     val selectedDictionary by application.settingsDataService.selectedDictionary.get().map {
         if (it == null || application.dictionaryDataService.getDictionaryUri(it) == null)
@@ -142,32 +141,36 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
             }
         }
     ) {
-        if (selectedDictionary == null) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(it),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Please select dictionary.",
-                    style = MaterialTheme.typography.displayLarge,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        } else {
-            LazyColumn(modifier = Modifier
-                .fillMaxSize()
-                .padding(it)) {
-                item {
-                    AnimatedVisibility(
-                        visible = selectedDictionary != null,
-                        enter = slideInVertically() + fadeIn(),
-                    ) {
-                        ScrabblerForm(scrabblerViewModel, selectedDictionary, selectedSearchMode)
-                    }
-                }
+        val loadingState by scrabblerViewModel.loadingState.collectAsState()
+        val results by scrabblerViewModel.results.collectAsState()
 
+        if (selectedDictionary == null) {
+            SelectDictionaryPrompt(
+                Modifier
+                    .fillMaxSize()
+                    .padding(it))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+            ) {
                 item {
-                    Results(scrabblerViewModel)
+                    ScrabblerForm(
+                        selectedSearchMode,
+                        onQueryChanged = { query ->
+                            if (selectedDictionary != null) {
+                                scrabblerViewModel.onQueryChanged(
+                                    selectedDictionary!!,
+                                    query,
+                                )
+                            }
+                        },
+                        onClearResults = { scrabblerViewModel.clearResults() }
+                    )
+                }
+                item {
+                    Results(loadingState, results)
                 }
             }
         }
@@ -175,10 +178,32 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
 }
 
 @Composable
+fun SelectDictionaryPrompt(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Please select dictionary.",
+            style = MaterialTheme.typography.displayLarge,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Preview
+@Composable
+fun SelectDictionaryPromptPreview() {
+    ScrabblerTheme {
+        SelectDictionaryPrompt(Modifier.size(400.dp))
+    }
+}
+
+@Composable
 fun ScrabblerForm(
-    scrabblerViewModel: ScrabblerViewModel,
-    selectedDictionary: String?,
-    searchMode: SearchMode
+    searchMode: SearchMode,
+    onQueryChanged: (ScrabblerQuery) -> Unit = {},
+    onClearResults: () -> Unit = {},
 ) {
     val keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
 
@@ -197,7 +222,7 @@ fun ScrabblerForm(
         BooleanFormField("Remove accents", rememberSaveable { mutableStateOf(true) })
 
     if (wordField.value.isEmpty()) {
-        scrabblerViewModel.clearResults()
+        onClearResults()
     }
 
     val permutationSearchFields = listOf(
@@ -224,36 +249,29 @@ fun ScrabblerForm(
             fields = if (searchMode == SearchMode.PERMUTATIONS) permutationSearchFields else simpleSearchFields,
             submitLabel = "Search",
             onSubmit = {
-                if (selectedDictionary != null) {
-                    val query = if (searchMode == SearchMode.PERMUTATIONS) {
-                        PermutationsScrabblerQuery(
-                            word = wordField.value,
-                            prefix = prefixField.value,
-                            suffix = suffixField.value,
-                            contains = containsField.value,
-                            regexFilter = regexFilterField.value.emptyToNull(),
-                            useAllLetters = useAllLettersField.value,
-                            removeAccents = removeAccentsField.value,
-                        )
-                    } else {
-                        SearchScrabblerQuery(
-                            word = wordField.value,
-                            removeAccents = removeAccentsField.value,
-                        )
-                    }
-                    scrabblerViewModel.onQueryChanged(
-                        selectedDictionary,
-                        query,
+                val query = if (searchMode == SearchMode.PERMUTATIONS) {
+                    PermutationsScrabblerQuery(
+                        word = wordField.value,
+                        prefix = prefixField.value,
+                        suffix = suffixField.value,
+                        contains = containsField.value,
+                        regexFilter = regexFilterField.value.emptyToNull(),
+                        useAllLetters = useAllLettersField.value,
+                        removeAccents = removeAccentsField.value,
+                    )
+                } else {
+                    SearchScrabblerQuery(
+                        word = wordField.value,
+                        removeAccents = removeAccentsField.value,
                     )
                 }
+                onQueryChanged(query)
             })
     }
 }
 
 @Composable
-fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifier) {
-    val loadingState by scrabblerViewModel.loadingState.collectAsState()
-    val results by scrabblerViewModel.results.collectAsState()
+fun Results(loadingState: LoadingState, results: List<String>, modifier: Modifier = Modifier) {
     if (loadingState == LoadingState.LOADING) {
         Box(
             modifier
@@ -349,7 +367,7 @@ fun DictionarySelector(
                 modifier = Modifier.padding(end = 4.dp)
             )
             Text(selectedDictionary ?: "Select dictionary")
-            Icon(Icons.Default.ArrowDropDown, null)
+            Icon(Default.ArrowDropDown, null)
         }
         DropdownMenu(
             modifier = Modifier.fillMaxWidth(),
@@ -360,16 +378,16 @@ fun DictionarySelector(
                     Text("Load from file.")
                 },
                 onClick = {
-                expanded = false
-                openFileLauncher.launch(
-                    arrayOf(
-                        "text/plain",
-                        "application/gzip",
-                        "text/csv",
-                        "text/comma-separated-values"
+                    expanded = false
+                    openFileLauncher.launch(
+                        arrayOf(
+                            "text/plain",
+                            "application/gzip",
+                            "text/csv",
+                            "text/comma-separated-values"
+                        )
                     )
-                )
-            })
+                })
             for (dictionary in dictionaries) {
                 DropdownMenuItem(
                     text = {
@@ -387,23 +405,13 @@ fun DictionarySelector(
                         }
                     },
                     onClick = {
-                    expanded = false
-                    onDictionarySelected(dictionary)
-                })
+                        expanded = false
+                        onDictionarySelected(dictionary)
+                    })
             }
         }
     }
 }
-
-@ExperimentalAnimationApi
-@Composable
-@Preview(showBackground = true)
-fun DefaultPreview() {
-    ScrabblerTheme {
-        ScrabblerApp(ScrabblerViewModel(ScrabblerApplication()))
-    }
-}
-
 
 fun extractFilename(contentResolver: ContentResolver, uri: Uri): String? {
     contentResolver.query(uri, null, null, null, null)?.use { cursor ->
