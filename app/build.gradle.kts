@@ -60,7 +60,7 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -81,9 +81,6 @@ dependencies {
 
     implementation(libs.flogger)
     implementation(libs.flogger.system.backend)
-
-    implementation(libs.accompanist.insets)
-    implementation(libs.accompanist.insets.ui)
 
     implementation(libs.scrabblerlib)
     implementation(libs.scrabblerkt.datastructures)

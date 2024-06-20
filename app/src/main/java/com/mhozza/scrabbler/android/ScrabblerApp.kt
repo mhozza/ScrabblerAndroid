@@ -14,12 +14,27 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -30,14 +45,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.insets.*
 import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.nio.file.Paths
-import com.google.accompanist.insets.ui.TopAppBar
-import com.google.accompanist.insets.ui.Scaffold
-import com.google.accompanist.insets.ui.BottomNavigation
 
 private val CONTENT_PADDING = 8.dp
 
@@ -46,19 +57,19 @@ enum class SearchMode(
     val label: @Composable () -> Unit = {},
 ) {
     PERMUTATIONS(
-        icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+        icon = { Icon(Default.Refresh, contentDescription = null) },
         label = { Text("Permutations") }
     ),
     SEARCH(
-        icon = { Icon(Icons.Default.Search, contentDescription = null) },
+        icon = { Icon(Default.Search, contentDescription = null) },
         label = { Text("Search") }
     ),
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalAnimationApi
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
-    val scaffoldState = rememberScaffoldState()
     val application = LocalContext.current.applicationContext as ScrabblerApplication
     val selectedDictionary by application.settingsDataService.selectedDictionary.get().map {
         if (it == null || application.dictionaryDataService.getDictionaryUri(it) == null)
@@ -77,20 +88,17 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
-        scaffoldState = scaffoldState,
         modifier = Modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                contentPadding = rememberInsetsPaddingValues(
-                    insets = LocalWindowInsets.current.statusBars,
-                    applyBottom = false,
-                ),
-                backgroundColor = MaterialTheme.colors.primary,
                 title = { Text("Scrabbler") },
                 actions = {
                     DictionarySelector(
-                        scaffoldState,
+                        snackbarHostState,
                         selectedDictionary,
                         onDictionarySelected = {
                             setSelectedDictionary(it)
@@ -117,17 +125,9 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
                 visible = selectedDictionary != null,
                 enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
             ) {
-                BottomNavigation(
-                    contentPadding = rememberInsetsPaddingValues(
-                        insets = derivedWindowInsetsTypeOf(
-                            LocalWindowInsets.current.ime,
-                            LocalWindowInsets.current.navigationBars
-                        ),
-                        applyTop = false
-                    )
-                ) {
+                NavigationBar {
                     for (mode in enumValues<SearchMode>()) {
-                        BottomNavigationItem(
+                        NavigationBarItem(
                             selected = mode == selectedSearchMode,
                             onClick = {
                                 application.applicationScope.launch {
@@ -149,7 +149,7 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel) {
             ) {
                 Text(
                     text = "Please select dictionary.",
-                    style = MaterialTheme.typography.h1,
+                    style = MaterialTheme.typography.displayLarge,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -215,7 +215,7 @@ fun ScrabblerForm(
         removeAccentsField,
     )
 
-    Surface(elevation = 5.dp) {
+    Surface(shadowElevation = 5.dp) {
         Form(
             modifier = Modifier.padding(CONTENT_PADDING),
             fieldModifier = Modifier
@@ -272,26 +272,25 @@ fun Results(scrabblerViewModel: ScrabblerViewModel, modifier: Modifier = Modifie
             if (results.isEmpty()) {
                 Text(
                     "No results",
-                    style = MaterialTheme.typography.h6,
+                    style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colors.error
+                    color = MaterialTheme.colorScheme.error
                 )
             }
             for (word in results) {
                 Text(
                     word,
                     modifier = Modifier.padding(vertical = 4.dp),
-                    style = MaterialTheme.typography.body1
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DictionarySelector(
-    scaffoldState: ScaffoldState,
+    snackbarHostState: SnackbarHostState,
     selectedDictionary: String? = null,
     onDictionarySelected: (String?) -> Unit = {},
     onNewDictionarySelected: (String, String) -> Unit = { _, _ -> run {} },
@@ -338,7 +337,7 @@ fun DictionarySelector(
             onNewDictionarySelected(it, dictionaryPath.toString())
         } catch (e: Exception) {
             Log.e("DictionarySelector", "Failed to load dictionary.", e)
-            scope.launch { scaffoldState.snackbarHostState.showSnackbar("Failed to load dictionary.") }
+            scope.launch { snackbarHostState.showSnackbar("Failed to load dictionary.") }
         }
     }
 
@@ -356,7 +355,11 @@ fun DictionarySelector(
             modifier = Modifier.fillMaxWidth(),
             expanded = expanded,
             onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(onClick = {
+            DropdownMenuItem(
+                text = {
+                    Text("Load from file.")
+                },
+                onClick = {
                 expanded = false
                 openFileLauncher.launch(
                     arrayOf(
@@ -366,27 +369,27 @@ fun DictionarySelector(
                         "text/comma-separated-values"
                     )
                 )
-            }) {
-                Text("Load from file.")
-            }
+            })
             for (dictionary in dictionaries) {
-                DropdownMenuItem(onClick = {
+                DropdownMenuItem(
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(dictionary, modifier = Modifier.weight(1f))
+                            Icon(
+                                Default.Delete, contentDescription = "Delete",
+                                Modifier
+                                    .clickable(onClick = {
+                                        expanded = false
+                                        onDictionaryDeleted(dictionary)
+                                    })
+                                    .padding(4.dp)
+                            )
+                        }
+                    },
+                    onClick = {
                     expanded = false
                     onDictionarySelected(dictionary)
-                }) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(dictionary, modifier = Modifier.weight(1f))
-                        Icon(
-                            Icons.Default.Delete, contentDescription = "Delete",
-                            Modifier
-                                .clickable(onClick = {
-                                    expanded = false
-                                    onDictionaryDeleted(dictionary)
-                                })
-                                .padding(4.dp)
-                        )
-                    }
-                }
+                })
             }
         }
     }
