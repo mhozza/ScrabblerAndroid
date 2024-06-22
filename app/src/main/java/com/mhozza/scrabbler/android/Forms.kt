@@ -1,69 +1,88 @@
 package com.mhozza.scrabbler.android
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.mhozza.scrabbler.android.ui.ScrabblerTheme
 
-abstract class FormField<T>(
-    private val state: MutableState<T>,
-    private val _widget: @Composable (Modifier, () -> Unit) -> Unit
-) {
-    val value: T
-        get() = state.value
+@Composable fun TextFormWidget(
+     value: String,
+     onValueChange: (String) -> Unit,
+     modifier: Modifier = Modifier,
+     label: String = "",
+     keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+     onClick: (() -> Unit)? = null,
+     onSubmit: () -> Unit = {})  {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val interactionSource = remember { MutableInteractionSource() }
 
-    val widget: @Composable (Modifier, () -> Unit) -> Unit = { modifier, onSubmit ->
-        _widget.invoke(modifier, onSubmit)
+    if(onClick != null) {
+        LaunchedEffect(onClick, interactionSource) {
+            interactionSource.interactions.collect {
+                if(it is PressInteraction.Release) {
+                    onClick()
+                }
+            }
+        }
+    }
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        label = { Text(label) },
+        singleLine = true,
+        interactionSource = interactionSource,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = KeyboardActions(onSearch = {
+            keyboardController?.hide()
+            onSubmit()
+        })
+    )
+}
+
+@Preview
+@Composable
+fun TextFormWidgetPreview() {
+    ScrabblerTheme {
+        TextFormWidget("bar", {}, modifier = Modifier.width(200.dp), label = "foo")
     }
 }
 
-class TextFormField @OptIn(ExperimentalComposeUiApi::class) constructor(
-    label: String = "",
-    state: MutableState<String>,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-    widget: @Composable ((Modifier, () -> Unit) -> Unit) = { modifier, onSubmit ->
-        val keyboardController = LocalSoftwareKeyboardController.current
-        OutlinedTextField(
-            value = state.value,
-            onValueChange = { state.value = it },
-            modifier = modifier,
-            label = { Text(label) },
-            singleLine = true,
-            keyboardOptions = keyboardOptions,
-            keyboardActions = KeyboardActions(onSearch = {
-                keyboardController?.hide()
-                onSubmit()
-            })
-        )
-    }
-) : FormField<String>(state, widget)
 
-class BooleanFormField(
-    label: String = "",
-    state: MutableState<Boolean>,
-    widget: @Composable ((Modifier, () -> Unit) -> Unit) = { modifier, _ ->
-        LabeledCheckbox(
-            modifier = modifier,
-            label = label,
-            value = state.value,
-            onValueChange = { state.value = it }
-        )
+@Composable
+fun BooleanFormWidget(value: Boolean, onValueChange: (Boolean) -> Unit, modifier: Modifier = Modifier, label: String = "") {
+    LabeledCheckbox(
+        modifier = modifier,
+        label = label,
+        value = value,
+        onValueChange = onValueChange
+    )
+}
+
+@Preview
+@Composable
+fun BooleanFormWidgetPreview() {
+    ScrabblerTheme {
+        BooleanFormWidget(true, {}, modifier = Modifier.width(200.dp), label = "foo")
     }
-) : FormField<Boolean>(state, widget)
+}
 
 @Composable
 fun LabeledCheckbox(
@@ -72,41 +91,8 @@ fun LabeledCheckbox(
     value: Boolean,
     onValueChange: (Boolean) -> Unit
 ) {
-    Row(modifier = modifier.clickable(onClick = { onValueChange(!value) })) {
+    Row(modifier = modifier.clickable(onClick = { onValueChange(!value) }), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = value, onCheckedChange = onValueChange)
         Text(label)
     }
-}
-
-@Composable
-fun Form(
-    modifier: Modifier = Modifier,
-    fieldModifier: Modifier = Modifier,
-    fields: List<FormField<*>>,
-    submitLabel: String = "Submit",
-    onSubmit: () -> Unit = {}
-) {
-    Column(modifier) {
-        for (field in fields) {
-            field.widget(fieldModifier, onSubmit)
-        }
-        Button(
-            modifier = fieldModifier,
-            onClick = onSubmit,
-
-        ) {
-            Text(submitLabel)
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun FormExample() {
-    val fields = listOf(
-        TextFormField("Foo", remember { mutableStateOf("") }),
-        TextFormField("Bar", remember { mutableStateOf("initial value") }),
-        BooleanFormField("Checkbox", remember { mutableStateOf(false) })
-    )
-    Form(fields = fields)
 }

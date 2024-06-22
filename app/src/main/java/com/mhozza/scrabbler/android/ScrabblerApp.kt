@@ -7,11 +7,20 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -24,17 +33,24 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -140,41 +156,44 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
             }
         }
     ) {
-        val loadingState by scrabblerViewModel.loadingState.collectAsState()
-        val results by scrabblerViewModel.results.collectAsState()
+        val resultsState by scrabblerViewModel.resultsState.collectAsState()
 
         if (selectedDictionary == null) {
             SelectDictionaryPrompt(
                 Modifier
                     .fillMaxSize()
-                    .padding(it))
+                    .padding(it)
+            )
         } else {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(it)
             ) {
-                item {
-                    ScrabblerForm(
-                        selectedSearchMode,
-                        onQueryChanged = { query ->
-                            if (selectedDictionary != null) {
-                                scrabblerViewModel.onQueryChanged(
-                                    selectedDictionary!!,
-                                    query,
-                                )
-                            }
-                        },
-                        onClearResults = { scrabblerViewModel.clearResults() }
-                    )
+                if (selectedSearchMode == SearchMode.PERMUTATIONS) {
+                    PermutationsForm(onQueryChanged = { query ->
+                        scrabblerViewModel.onQueryChanged(
+                            selectedDictionary!!,
+                            query,
+                        )
+                    },
+                    onClearResults = { scrabblerViewModel.clearResults() })
+                } else {
+                    SearchForm(onQueryChanged = { query ->
+                        scrabblerViewModel.onQueryChanged(
+                            selectedDictionary!!,
+                            query,
+                        )
+                    },
+                        onClearResults = { scrabblerViewModel.clearResults() })
                 }
-                item {
-                    Results(loadingState, results)
-                }
+                Spacer(modifier = Modifier.height(1.dp).background(MaterialTheme.colorScheme.outline))
+                Results(resultsState)
             }
         }
     }
 }
+
 
 @Composable
 fun SelectDictionaryPrompt(modifier: Modifier = Modifier) {
@@ -199,125 +218,225 @@ fun SelectDictionaryPromptPreview() {
 }
 
 @Composable
-fun ScrabblerForm(
-    searchMode: SearchMode,
-    onQueryChanged: (ScrabblerQuery) -> Unit = {},
-    onClearResults: () -> Unit = {},
-) {
-    val keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
+fun PermutationsForm(modifier: Modifier = Modifier,
+                     onQueryChanged: (ScrabblerQuery) -> Unit = {},
+                     onClearResults: () -> Unit = {},) {
+    Column(modifier = modifier.background(MaterialTheme.colorScheme.surface).animateContentSize()) {
+        val keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
 
-    val wordField = TextFormField("Word", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val prefixField =
-        TextFormField("Prefix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val containsField =
-        TextFormField("Contains", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val suffixField =
-        TextFormField("Suffix", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val regexFilterField =
-        TextFormField("Filter (regex)", rememberSaveable { mutableStateOf("") }, keyboardOptions)
-    val useAllLettersField =
-        BooleanFormField("Use all letters", rememberSaveable { mutableStateOf(true) })
-    val removeAccentsField =
-        BooleanFormField("Remove accents", rememberSaveable { mutableStateOf(true) })
+        var collapsed by rememberSaveable { mutableStateOf(false) }
 
-    if (wordField.value.isEmpty()) {
-        onClearResults()
-    }
+        var wordFieldState by rememberSaveable { mutableStateOf("") }
+        var prefixFieldState by rememberSaveable { mutableStateOf("") }
+        var containsField by rememberSaveable { mutableStateOf("") }
+        var suffixFieldState by rememberSaveable { mutableStateOf("") }
+        var regexFilterField by rememberSaveable { mutableStateOf("") }
+        var useAllLettersField by rememberSaveable { mutableStateOf(true) }
+        var removeAccentsField by rememberSaveable { mutableStateOf(true) }
 
-    val permutationSearchFields = listOf(
-        wordField,
-        prefixField,
-        containsField,
-        suffixField,
-        regexFilterField,
-        useAllLettersField,
-        removeAccentsField,
-    )
+        SideEffect {
+            if(wordFieldState.isEmpty()) {
+                onClearResults()
+            }
+        }
 
-    val simpleSearchFields = listOf(
-        wordField,
-        removeAccentsField,
-    )
+        val onSubmit = {
+            val query =
+                PermutationsScrabblerQuery(
+                    word = wordFieldState,
+                    prefix = prefixFieldState,
+                    suffix = suffixFieldState,
+                    contains = containsField,
+                    regexFilter = regexFilterField.emptyToNull(),
+                    useAllLetters = useAllLettersField,
+                    removeAccents = removeAccentsField,
+                )
+            onQueryChanged(query)
+            collapsed = true
+        }
 
-    Surface(shadowElevation = 5.dp) {
-        Form(
-            modifier = Modifier.padding(CONTENT_PADDING),
-            fieldModifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            fields = if (searchMode == SearchMode.PERMUTATIONS) permutationSearchFields else simpleSearchFields,
-            submitLabel = "Search",
-            onSubmit = {
-                val query = if (searchMode == SearchMode.PERMUTATIONS) {
-                    PermutationsScrabblerQuery(
-                        word = wordField.value,
-                        prefix = prefixField.value,
-                        suffix = suffixField.value,
-                        contains = containsField.value,
-                        regexFilter = regexFilterField.value.emptyToNull(),
-                        useAllLetters = useAllLettersField.value,
-                        removeAccents = removeAccentsField.value,
-                    )
-                } else {
-                    SearchScrabblerQuery(
-                        word = wordField.value,
-                        removeAccents = removeAccentsField.value,
+        val defaultFieldModifier = Modifier.fillMaxWidth()
+
+        if (collapsed) {
+            Row(defaultFieldModifier, verticalAlignment = Alignment.CenterVertically) {
+                TextFormWidget(
+                    wordFieldState,
+                    onValueChange = { wordFieldState = it },
+                    modifier = Modifier.weight(1f),
+                    label = "Word",
+                    keyboardOptions = keyboardOptions,
+                    onClick = {collapsed = false},
+                    onSubmit = onSubmit
+                )
+                IconButton(onClick = { collapsed = false }) {
+                    Icon(
+                        Default.ArrowDropDown,
+                        "Expand form."
                     )
                 }
+            }
+        } else {
+            TextFormWidget(wordFieldState, onValueChange = {wordFieldState = it}, modifier = defaultFieldModifier, label = "Word", keyboardOptions = keyboardOptions, onSubmit = onSubmit)
+            TextFormWidget(
+                prefixFieldState,
+                onValueChange = { prefixFieldState = it },
+                modifier = defaultFieldModifier,
+                label = "Prefix",
+                keyboardOptions = keyboardOptions
+            )
+            TextFormWidget(
+                containsField,
+                onValueChange = { containsField = it },
+                modifier = defaultFieldModifier,
+                label = "Contains",
+                keyboardOptions = keyboardOptions
+            )
+            TextFormWidget(
+                suffixFieldState,
+                onValueChange = { suffixFieldState = it },
+                modifier = defaultFieldModifier,
+                label = "Suffix",
+                keyboardOptions = keyboardOptions
+            )
+            TextFormWidget(
+                regexFilterField,
+                onValueChange = { regexFilterField = it },
+                modifier = defaultFieldModifier,
+                label = "Filter (regex)",
+                keyboardOptions = keyboardOptions
+            )
+            BooleanFormWidget(
+                useAllLettersField,
+                onValueChange = { useAllLettersField = it },
+                modifier = defaultFieldModifier,
+                label = "Use all letters"
+            )
+            BooleanFormWidget(
+                removeAccentsField,
+                onValueChange = { removeAccentsField = it },
+                modifier = defaultFieldModifier,
+                label = "Remove accents"
+            )
+        }
+
+        Button(
+            modifier = defaultFieldModifier,
+            onClick = {
+                onSubmit()
+            },
+        ) {
+            Text("Search")
+        }
+    }
+}
+
+
+@Composable
+fun SearchForm(modifier: Modifier = Modifier,
+                     onQueryChanged: (ScrabblerQuery) -> Unit = {},
+                     onClearResults: () -> Unit = {},) {
+    Column(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
+        val keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
+
+        var wordFieldState by rememberSaveable { mutableStateOf("") }
+
+        SideEffect {
+            if(wordFieldState.isEmpty()) {
+                onClearResults()
+            }
+        }
+
+        var removeAccentsField by rememberSaveable { mutableStateOf(true) }
+
+        val defaultFieldModifer = Modifier.fillMaxWidth()
+
+        TextFormWidget(wordFieldState, onValueChange = {wordFieldState = it}, modifier = defaultFieldModifer, label = "Word", keyboardOptions = keyboardOptions)
+        BooleanFormWidget(removeAccentsField, onValueChange = {removeAccentsField = it}, modifier = defaultFieldModifer, label = "Remove accents")
+
+        Button(
+            modifier = defaultFieldModifer,
+            onClick = {
+                val query =
+                    SearchScrabblerQuery(
+                        word = wordFieldState,
+                        removeAccents = removeAccentsField,
+                    )
                 onQueryChanged(query)
-            })
+            },
+        ) {
+            Text("Search")
+        }
     }
 }
 
 @Preview
 @Composable
-fun ScrabblerFormSearchPreview() {
+fun PermutationsFormPreview() {
     ScrabblerTheme {
-      ScrabblerForm(SearchMode.SEARCH)
+        PermutationsForm()
     }
 }
+
 
 @Preview
 @Composable
-fun ScrabblerFormPermutationsPreview() {
+fun SearchFormPreview() {
     ScrabblerTheme {
-        ScrabblerForm(SearchMode.PERMUTATIONS)
+        SearchForm()
     }
 }
 
-
 @Composable
-fun Results(loadingState: LoadingState, results: List<String>, modifier: Modifier = Modifier) {
-    if (loadingState == LoadingState.LOADING) {
-        Box(
+fun Results(resultsState: ResultsState, modifier: Modifier = Modifier) {
+    when (resultsState) {
+        is ResultsState.Loading -> Box(
             modifier
                 .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(CONTENT_PADDING), contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
         }
-    } else {
-        Column(
+
+        is ResultsState.Loaded -> {
+            Column(
+                modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(CONTENT_PADDING)
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+                if (resultsState.results.isEmpty()) {
+                    Text(
+                        "No results",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                for (word in resultsState.results) {
+                    Text(
+                        word,
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+
+        is ResultsState.Idle -> Box(
             modifier
                 .fillMaxWidth()
-                .padding(CONTENT_PADDING)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(CONTENT_PADDING), contentAlignment = Alignment.Center
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
-            if (results.isEmpty()) {
-                Text(
-                    "No results",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            for (word in results) {
-                Text(
-                    word,
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            Text(
+                "Please type a query",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -326,7 +445,15 @@ fun Results(loadingState: LoadingState, results: List<String>, modifier: Modifie
 @Composable
 fun ResultsPreview() {
     ScrabblerTheme {
-        Results(LoadingState.IDLE, listOf("foo", "bar"))
+        Results(ResultsState.Loaded(listOf("foo", "bar")))
+    }
+}
+
+@Preview
+@Composable
+fun ResultsIdlePreview() {
+    ScrabblerTheme {
+        Results(ResultsState.Idle)
     }
 }
 
@@ -334,7 +461,7 @@ fun ResultsPreview() {
 @Composable
 fun ResultsLoadingPreview() {
     ScrabblerTheme {
-        Results(LoadingState.LOADING, listOf("foo", "bar"))
+        Results(ResultsState.Loading)
     }
 }
 
@@ -342,7 +469,7 @@ fun ResultsLoadingPreview() {
 @Composable
 fun ResultsEmptyPreview() {
     ScrabblerTheme {
-        Results(LoadingState.IDLE, emptyList())
+        Results(ResultsState.Loaded(emptyList()))
     }
 }
 
