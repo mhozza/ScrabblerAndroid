@@ -13,7 +13,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.Icons.Default
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
@@ -270,6 +269,23 @@ fun ScrabblerForm(
     }
 }
 
+@Preview
+@Composable
+fun ScrabblerFormSearchPreview() {
+    ScrabblerTheme {
+      ScrabblerForm(SearchMode.SEARCH)
+    }
+}
+
+@Preview
+@Composable
+fun ScrabblerFormPermutationsPreview() {
+    ScrabblerTheme {
+        ScrabblerForm(SearchMode.PERMUTATIONS)
+    }
+}
+
+
 @Composable
 fun Results(loadingState: LoadingState, results: List<String>, modifier: Modifier = Modifier) {
     if (loadingState == LoadingState.LOADING) {
@@ -303,6 +319,30 @@ fun Results(loadingState: LoadingState, results: List<String>, modifier: Modifie
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun ResultsPreview() {
+    ScrabblerTheme {
+        Results(LoadingState.IDLE, listOf("foo", "bar"))
+    }
+}
+
+@Preview
+@Composable
+fun ResultsLoadingPreview() {
+    ScrabblerTheme {
+        Results(LoadingState.LOADING, listOf("foo", "bar"))
+    }
+}
+
+@Preview
+@Composable
+fun ResultsEmptyPreview() {
+    ScrabblerTheme {
+        Results(LoadingState.IDLE, emptyList())
     }
 }
 
