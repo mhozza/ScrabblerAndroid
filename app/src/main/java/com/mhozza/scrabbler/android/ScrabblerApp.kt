@@ -37,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -88,22 +89,11 @@ enum class SearchMode(
 @Composable
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
     val application = LocalContext.current.applicationContext as ScrabblerApplication
-    val selectedDictionary by application.settingsDataService.selectedDictionary.get().map {
-        if (it == null || application.dictionaryDataService.getDictionaryUri(it) == null)
-            null
-        else
-            it
-    }
-        .collectAsState(null)
+    val selectedDictionary by scrabblerViewModel.selectedDictionary.collectAsState()
+    val dictionaryLoadingState by scrabblerViewModel.dictionaryLoadedState.collectAsState()
     val selectedSearchMode by application.settingsDataService.selectedMode.get().collectAsState(
         initial = SearchMode.PERMUTATIONS
     )
-
-    fun setSelectedDictionary(dictionary: String?) {
-        application.applicationScope.launch {
-            application.settingsDataService.selectedDictionary.set(dictionary)
-        }
-    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -118,15 +108,15 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
                         snackbarHostState,
                         selectedDictionary,
                         onDictionarySelected = {
-                            setSelectedDictionary(it)
+                            scrabblerViewModel.onSelectNewDictionary(it)
                         },
                         onNewDictionarySelected = { name, path ->
                             scrabblerViewModel.onLoadNewDictionary(name, path)
-                            setSelectedDictionary(name)
+                            scrabblerViewModel.onSelectNewDictionary(name)
                         },
                         onDictionaryDeleted = {
                             if (it == selectedDictionary) {
-                                setSelectedDictionary(null)
+                                scrabblerViewModel.onSelectNewDictionary(null)
                             }
                             with(application) {
                                 applicationScope.launch {
@@ -174,10 +164,16 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
                     .padding(paddingValues)
                     .padding(horizontal = CONTENT_PADDING)
             ) {
+                if(dictionaryLoadingState == DictionaryLoadedState.LOADING) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.secondary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
                 if (selectedSearchMode == SearchMode.PERMUTATIONS) {
                     PermutationsForm(onQueryChanged = { query ->
                         scrabblerViewModel.onQueryChanged(
-                            selectedDictionary!!,
                             query,
                         )
                     },
@@ -185,7 +181,6 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
                 } else {
                     SearchForm(onQueryChanged = { query ->
                         scrabblerViewModel.onQueryChanged(
-                            selectedDictionary!!,
                             query,
                         )
                     },
