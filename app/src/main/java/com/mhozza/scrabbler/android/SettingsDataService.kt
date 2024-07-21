@@ -6,13 +6,6 @@ import java.lang.IllegalArgumentException
 
 class SettingsDataService(private val settingsDao: SettingsDao) {
     val selectedDictionary = StringSettingAccessor(SELECTED_DICTIONARY_KEY)
-    val selectedMode = SettingAccessor(SELECTED_MODE_KEY, {it.name}) {
-        try {
-            SearchMode.valueOf(it ?: "")
-        } catch (e: IllegalArgumentException) {
-            SearchMode.PERMUTATIONS
-        }
-    }
 
     open inner class SettingAccessor<T>(
         private val key: String,

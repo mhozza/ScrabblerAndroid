@@ -12,10 +12,12 @@ junitVersion = "1.1.5"
 kotlin = "2.0.0"
 lifecycleVersion = "2.8.2"
 materialVersion = "1.12.0"
+navigationCompose = "2.8.0-beta05"
 roomVersion = "2.6.1"
 scrabblerlibVersion = "2.2.1"
 androidxComposeBom = "2024.06.00"
 ksp = "2.0.0-1.0.22"
+serialization = "1.7.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityKtx" }
@@ -32,6 +34,7 @@ androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtim
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleVersion" }
 androidx-lifecycle-viewmodel-savedstate = { module = "androidx.lifecycle:lifecycle-viewmodel-savedstate", version.ref = "lifecycleVersion" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomVersion" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomVersion" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomVersion" }
@@ -42,6 +45,7 @@ flogger = { module = "com.google.flogger:flogger", version.ref = "floggerVersion
 flogger-system-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "floggerVersion" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 material = { module = "com.google.android.material:material", version.ref = "materialVersion" }
 scrabblerkt-datastructures = { module = "com.github.mhozza.ScrabblerKt:datastructures", version.ref = "datastructuresVersion" }
 scrabblerlib = { module = "com.github.mhozza.ScrabblerKt:scrabblerlib", version.ref = "scrabblerlibVersion" }
@@ -52,3 +56,4 @@ jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = 
 androidx-room = { id = "androidx.room", version.ref = "roomVersion" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
