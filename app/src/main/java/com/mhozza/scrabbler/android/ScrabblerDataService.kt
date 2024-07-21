@@ -25,9 +25,9 @@ class ScrabblerDataService(
         }
     }
 
-    suspend fun findPermutations(dictionaryName: String, query: PermutationsScrabblerQuery): List<String> =
+    suspend fun findPermutations(dictionaryName: String, removeAccents: Boolean, query: PermutationsScrabblerQuery): List<String> =
         withContext(Dispatchers.Default) {
-            scrabblerFactory.get(dictionaryName, query.removeAccents).findPermutations(
+            scrabblerFactory.get(dictionaryName, removeAccents).findPermutations(
                 query.word,
                 prefix = query.prefix,
                 suffix = query.suffix,
@@ -38,9 +38,9 @@ class ScrabblerDataService(
             )
         }
 
-    suspend fun search(dictionaryName: String, query: SearchScrabblerQuery): List<String> =
+    suspend fun search(dictionaryName: String, removeAccents: Boolean, query: SearchScrabblerQuery): List<String> =
         withContext(Dispatchers.Default) {
-            scrabblerFactory.get(dictionaryName, query.removeAccents).findByRegex(
+            scrabblerFactory.get(dictionaryName, removeAccents).findByRegex(
                 query.word,
                 limit = WORD_COUNT_LIMIT,
             )
@@ -49,58 +49,29 @@ class ScrabblerDataService(
     private class ScrabblerFactory(
         private val dictionaryDataService: DictionaryDataService,
         private val contentResolver: ContentResolver,
-        private val allowMultipleScrabblers: Boolean = true,
     ) {
         data class ScrabblerCacheKey(val name: String, val removeAccents: Boolean)
         data class CachedScrabbler(val key: ScrabblerCacheKey, val scrabbler: Scrabbler)
 
         var cachedScrabbler: CachedScrabbler? = null
-        var cachedScrabblerNoAccents: CachedScrabbler? = null
 
         private val mutexWithAccents = Mutex()
-        private val mutexWithoutAccents = Mutex()
 
         suspend fun get(name: String, removeAccents: Boolean = false): Scrabbler {
-            if(!allowMultipleScrabblers) {
-                cachedScrabbler = null
-                cachedScrabblerNoAccents = null
-            }
-            return if(removeAccents) {
-                getWithoutAccents(name)
-            } else {
-                getWithAccents(name)
-            }
-        }
-
-        suspend fun getWithAccents(name: String): Scrabbler =
-            withContext(Dispatchers.IO) {
-                val key = ScrabblerCacheKey(name, false)
+            return withContext(Dispatchers.IO) {
+                val key = ScrabblerCacheKey(name, removeAccents)
                 mutexWithAccents.withLock {
                     if (cachedScrabbler?.key != key) {
                         // Allow the previous scrabbler to be cleared.
                         cachedScrabbler = null
-                        val dictionary = loadDictionary(name, false)
+                        val dictionary = loadDictionary(name, removeAccents)
                         cachedScrabbler = CachedScrabbler(key, Scrabbler(dictionary))
                     }
                 }
                 cachedScrabbler?.scrabbler
                     ?: throw IllegalStateException("Could not load dictionary")
             }
-
-        suspend fun getWithoutAccents(name: String): Scrabbler =
-            withContext(Dispatchers.IO) {
-                val key = ScrabblerCacheKey(name, true)
-                mutexWithoutAccents.withLock {
-                    if (cachedScrabblerNoAccents?.key != key) {
-                        // Allow the previous scrabbler to be cleared.
-                        cachedScrabblerNoAccents = null
-                        val dictionary = loadDictionary(name, true)
-                        cachedScrabblerNoAccents = CachedScrabbler(key, Scrabbler(dictionary))
-                    }
-                }
-                cachedScrabblerNoAccents?.scrabbler
-                    ?: throw IllegalStateException("Could not load dictionary")
-            }
+        }
 
         private suspend fun loadDictionary(name: String, removeAccents: Boolean): Dictionary {
             val uri = dictionaryDataService.getDictionaryUri(name)

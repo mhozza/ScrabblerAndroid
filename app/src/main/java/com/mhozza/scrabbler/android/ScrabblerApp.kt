@@ -90,7 +90,8 @@ enum class SearchMode(
 fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
     val application = LocalContext.current.applicationContext as ScrabblerApplication
     val selectedDictionary by scrabblerViewModel.selectedDictionary.collectAsState()
-    val dictionaryLoadingState by scrabblerViewModel.dictionaryLoadedState.collectAsState()
+    val isDictionaryLoading by scrabblerViewModel.isDictionaryLoading.collectAsState()
+    val removeAccents by scrabblerViewModel.removeAccents.collectAsState()
     val selectedSearchMode by application.settingsDataService.selectedMode.get().collectAsState(
         initial = SearchMode.PERMUTATIONS
     )
@@ -164,7 +165,7 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
                     .padding(paddingValues)
                     .padding(horizontal = CONTENT_PADDING)
             ) {
-                if(dictionaryLoadingState == DictionaryLoadedState.LOADING) {
+                if (isDictionaryLoading) {
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.secondary,
@@ -172,18 +173,24 @@ fun ScrabblerApp(scrabblerViewModel: ScrabblerViewModel = viewModel()) {
                     )
                 }
                 if (selectedSearchMode == SearchMode.PERMUTATIONS) {
-                    PermutationsForm(onQueryChanged = { query ->
-                        scrabblerViewModel.onQueryChanged(
-                            query,
-                        )
-                    },
+                    PermutationsForm(
+                        removeAccents = removeAccents,
+                        onRemoveAccentsChanged = {scrabblerViewModel.setRemoveAccents(it)},
+                        onQueryChanged = { query ->
+                            scrabblerViewModel.onQueryChanged(
+                                query,
+                            )
+                        },
                         onClearResults = { scrabblerViewModel.clearResults() })
                 } else {
-                    SearchForm(onQueryChanged = { query ->
-                        scrabblerViewModel.onQueryChanged(
-                            query,
-                        )
-                    },
+                    SearchForm(
+                        removeAccents = removeAccents,
+                        onRemoveAccentsChanged = {scrabblerViewModel.setRemoveAccents(it)},
+                        onQueryChanged = { query ->
+                            scrabblerViewModel.onQueryChanged(
+                                query,
+                            )
+                        },
                         onClearResults = { scrabblerViewModel.clearResults() })
                 }
                 Spacer(Modifier.height(8.dp))
@@ -220,6 +227,8 @@ fun SelectDictionaryPromptPreview() {
 
 @Composable
 fun PermutationsForm(
+    removeAccents: Boolean,
+    onRemoveAccentsChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onQueryChanged: (ScrabblerQuery) -> Unit = {},
     onClearResults: () -> Unit = {},
@@ -239,7 +248,6 @@ fun PermutationsForm(
         var suffixFieldState by rememberSaveable { mutableStateOf("") }
         var regexFilterField by rememberSaveable { mutableStateOf("") }
         var useAllLettersField by rememberSaveable { mutableStateOf(true) }
-        var removeAccentsField by rememberSaveable { mutableStateOf(true) }
 
         SideEffect {
             if (wordFieldState.isEmpty()) {
@@ -256,7 +264,6 @@ fun PermutationsForm(
                     contains = containsField,
                     regexFilter = regexFilterField.emptyToNull(),
                     useAllLetters = useAllLettersField,
-                    removeAccents = removeAccentsField,
                 )
             onQueryChanged(query)
             collapsed = true
@@ -322,8 +329,8 @@ fun PermutationsForm(
                 label = "Use all letters"
             )
             BooleanFormWidget(
-                removeAccentsField,
-                onValueChange = { removeAccentsField = it },
+                removeAccents,
+                onValueChange = onRemoveAccentsChanged,
                 modifier = defaultFieldModifier,
                 label = "Remove accents"
             )
@@ -342,6 +349,8 @@ fun PermutationsForm(
 
 @Composable
 fun SearchForm(
+    removeAccents: Boolean,
+    onRemoveAccentsChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onQueryChanged: (ScrabblerQuery) -> Unit = {},
     onClearResults: () -> Unit = {},
@@ -357,8 +366,6 @@ fun SearchForm(
             }
         }
 
-        var removeAccentsField by rememberSaveable { mutableStateOf(true) }
-
         val defaultFieldModifer = Modifier.fillMaxWidth()
 
         TextFormWidget(
@@ -369,8 +376,8 @@ fun SearchForm(
             keyboardOptions = keyboardOptions
         )
         BooleanFormWidget(
-            removeAccentsField,
-            onValueChange = { removeAccentsField = it },
+            removeAccents,
+            onValueChange = onRemoveAccentsChanged,
             modifier = defaultFieldModifer,
             label = "Remove accents"
         )
@@ -381,7 +388,6 @@ fun SearchForm(
                 val query =
                     SearchScrabblerQuery(
                         word = wordFieldState,
-                        removeAccents = removeAccentsField,
                     )
                 onQueryChanged(query)
             },
@@ -395,7 +401,7 @@ fun SearchForm(
 @Composable
 fun PermutationsFormPreview() {
     ScrabblerTheme {
-        PermutationsForm()
+        PermutationsForm(true, {})
     }
 }
 
@@ -404,7 +410,7 @@ fun PermutationsFormPreview() {
 @Composable
 fun SearchFormPreview() {
     ScrabblerTheme {
-        SearchForm()
+        SearchForm(true, {})
     }
 }
 
@@ -418,6 +424,7 @@ fun Results(resultsState: ResultsState, modifier: Modifier = Modifier) {
         ) {
             CircularProgressIndicator()
         }
+
         is ResultsState.Loaded -> {
             LazyColumn(
                 modifier
@@ -444,6 +451,7 @@ fun Results(resultsState: ResultsState, modifier: Modifier = Modifier) {
                 }
             }
         }
+
         is ResultsState.Idle ->
             Text(
                 "Please type a query",

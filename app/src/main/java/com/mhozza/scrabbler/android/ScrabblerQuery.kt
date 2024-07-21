@@ -9,10 +9,8 @@ data class PermutationsScrabblerQuery(
     val contains: String? = null,
     val regexFilter: String? = null,
     val useAllLetters: Boolean = true,
-    val removeAccents: Boolean = true,
 ): ScrabblerQuery()
 
 data class SearchScrabblerQuery(
     val word: String,
-    val removeAccents: Boolean = true,
 ): ScrabblerQuery()
